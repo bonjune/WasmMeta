@@ -26,13 +26,13 @@ type ParserTests(output: ITestOutputHelper) =
     [<Fact; Trait("Category", "Symbol")>]
     member _.``Parse Terminal f32`` () =
         @"\href{../syntax/types.html#syntax-valtype}{\mathsf{f32}}"
-        |> run pSymbol
+        |> run Symbol.pSymbol
         |> testWith (Term "f32")
 
     [<Fact; Trait("Category", "Symbol")>]
     member _.``Parse Non-terminal numtype`` () =
         @"\href{../syntax/types.html#syntax-numtype}{\mathit{numtype}}"
-        |> run pSymbol
+        |> run Symbol.pSymbol
         |> testWith (Nonterm "numtype")
 
     // Parsing productions
@@ -43,19 +43,19 @@ type ParserTests(output: ITestOutputHelper) =
         ~|~ \href{../syntax/types.html#syntax-valtype}{\mathsf{i64}}
         ~|~ \href{../syntax/types.html#syntax-valtype}{\mathsf{f32}}
         ~|~ \href{../syntax/types.html#syntax-valtype}{\mathsf{f64}}"
-        |> run pUnion
+        |> run Production.pUnion
         |> testWith (Union [Term "i32"; Term "i64"; Term "f32"; Term "f64"])
     
     [<Fact; Trait("Category", "Production")>]
     member _.``Parse Record`` () =
         """\{ \href{../syntax/types.html#syntax-limits}{\mathsf{min}}~\href{../syntax/values.html#syntax-int}{\mathit{u32}}, \href{../syntax/types.html#syntax-limits}{\mathsf{max}}~\href{../syntax/values.html#syntax-int}{\mathit{u32}}^? \}"""
-        |> run pRecord
+        |> run Production.pRecord
         |> testWith (Record (Map [Term "min", Nonterm "u32"; Term "max", Optional <| Nonterm "u32"]))
 
     [<Fact; Trait("Category", "Production")>]
     member _.``Parse Tuple Production`` () =
         @"\href{../syntax/types.html#syntax-resulttype}{\mathit{resulttype}} \href{../syntax/types.html#syntax-functype}{\rightarrow} \href{../syntax/types.html#syntax-resulttype}{\mathit{resulttype}}"
-        |> run pTuple
+        |> run Production.pTuple
         |> testWith (Tuple [Nonterm "resulttype"; Special @"\rightarrow"; Nonterm "resulttype"])
 
     [<Fact; Trait("Category", "Production")>]
@@ -130,6 +130,15 @@ type ParserTests(output: ITestOutputHelper) =
         \end{array}\end{split}\]"""
         |> run pFormula
         |> testWith [(Nonterm "limits", Record (Map [Term "min", Nonterm "u32"; Term "max", Optional <| Nonterm "u32"]))]
+
+    [<Fact; Trait("Category", "Formula")>]
+    member _.``Parse Table Type`` () =
+        """\[\begin{split}\begin{array}{llll}
+        \def\mathdef2599#1{{}}\mathdef2599{table type} & \href{../syntax/types.html#syntax-tabletype}{\mathit{tabletype}} &::=&
+        \href{../syntax/types.html#syntax-limits}{\mathit{limits}}~\href{../syntax/types.html#syntax-reftype}{\mathit{reftype}} \\
+        \end{array}\end{split}\]"""
+        |> run pFormula
+        |> testWith [(Nonterm "tabletype", Tuple [Nonterm "limits"; Nonterm "reftype"])]
 
     [<Fact; Trait("Category", "Formula")>]
     member _.``Parse Types`` () =

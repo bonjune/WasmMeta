@@ -57,10 +57,12 @@ module Tex =
         >>. many1Till anyChar skipClose
         .>> spaces .>> skipChar '&' .>> spaces
 
-    let skipHref =
+    let private skipHref' =
         skipString @"\href"
         .>> skipOpen
         .>> skipMany1Till skipAnyChar skipClose
+
+    let skipHref = attempt skipHref' <|> spaces
 
 
 [<RequireQualifiedAccess>]

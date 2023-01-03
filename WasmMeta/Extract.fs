@@ -62,13 +62,18 @@ let private skipHref =
 
 // Parsing symbols
 
-let private pMathit =
+let private pNonterm =
     skipString @"\mathit"
     >>. skipOpen
     >>. many1Till anyChar skipClose
     |>> (fun cs -> Nonterm (toString cs))
 
-let private pMathsf =
+let private pNontermOf s =
+    skipString @"\mathit"
+    >>. between skipOpen skipClose (pstring s)
+    |>> Nonterm
+
+let private pTerm =
     skipString @"\mathsf"
     >>. skipOpen
     >>. many1Till anyChar skipClose
@@ -76,7 +81,7 @@ let private pMathsf =
 
 let private pArrow = pstring @"\rightarrow" |>> Special
 
-let private pSymbolInner = choice [pMathit; pMathsf; pArrow]
+let private pSymbolInner = choice [pNonterm; pTerm; pArrow]
 
 let private pSymbolNaive =
     skipHref
@@ -105,6 +110,12 @@ let pUnion = parse {
 /// `A_1` ... `A_n`
 let pTuple = many1 pSymbolNaive |>> Tuple
 
+let pVec =
+    skipHref
+    >>. between skipOpen skipClose (pNontermOf "vec")
+    >>. between (skipChar '(') (skipChar ')') pSymbolNaive
+    |>> Vec
+
 let private pPair = pSymbolNaive .>> pchar '~' .>>. pSymbol
 let private pPairs = sepBy1 pPair (skipChar ',' .>> spaces)
 /// {key _term_, key _term_}
@@ -114,7 +125,7 @@ let pLhs = pMathDef >>. pSymbolNaive
 
 /// Reference: https://www.quanttec.com/fparsec/users-guide/parsing-alternatives.html
 let pRhs =
-    choice [attempt pRecord; attempt pUnion; pTuple]
+    choice [attempt pRecord; attempt pUnion; attempt pVec; pTuple]
     .>> spaces
 
 let pProd =
@@ -123,6 +134,7 @@ let pProd =
     .>> (skipChar '[' <|> spaces)
     .>>. pRhs
     .>> (skipChar ']' <|> spaces)
+    .>> spaces
 
 let pFormula: Parser<_, unit> =
     between skipBegin skipEnd (sepEndBy1 pProd skipProdSep)

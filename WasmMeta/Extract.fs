@@ -19,6 +19,7 @@ type Symbol =
     | Nonterm of string
     | Optional of Symbol
     | Special of string
+    | Named of string * Symbol
 
 type Production =
     | Union of Symbol list
@@ -81,6 +82,7 @@ module Symbol =
         >>. many1Till anyChar skipClose
         |>> (fun cs -> Term (toString cs))
 
+
     let pArrow = pstring @"\rightarrow" |>> Special
 
     let pSymbolInner = choice [pNonterm; pTerm; pArrow]
@@ -97,12 +99,29 @@ module Symbol =
         .>> spaces
         |>> Optional
 
-    let pSymbol = choice [attempt pSymbolOptional; pSymbolNaive]
+    let pSymbolNamed =
+        Tex.skipHref
+        >>. between skipOpen skipClose pTerm
+        .>> pchar '~'
+        .>>. choice [
+            attempt pSymbolOptional
+            pSymbolNaive
+        ]
+        |>> (fun (name, sym) ->
+            match name with
+            | Term t -> Named (t, sym)
+            | _ -> failwith "unreachable"
+        )
+
+    let pSymbol =
+        choice [
+            attempt pSymbolNamed
+            attempt pSymbolOptional
+            pSymbolNaive
+        ]
 
 [<RequireQualifiedAccess>]
 module Production =
-
-
     /// A tuple separated by spaces
     let private pTupleSpaces = many1 Symbol.pSymbol
 
@@ -124,7 +143,7 @@ module Production =
     let pUnion = parse {
         let! symbols = sepBy1 Symbol.pSymbol skipOr
         if symbols.Length = 1
-        then return! fail "Require more than one symbol"
+        then return! fail "Require more than one tuple"
         else return Union symbols
     }
 

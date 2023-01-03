@@ -35,6 +35,12 @@ type ParserTests(output: ITestOutputHelper) =
         |> run Symbol.pSymbol
         |> testWith (Nonterm "numtype")
 
+    [<Fact; Trait("Category", "Symbol")>]
+    member _.``Parse Named Symbol`` () =
+        @"\href{../syntax/types.html#syntax-externtype}{\mathsf{func}}~\href{../syntax/types.html#syntax-functype}{\mathit{functype}}"
+        |> run Symbol.pSymbolNamed
+        |> testWith (Named ("func", Nonterm "functype"))
+
     // Parsing productions
 
     [<Fact; Trait("Category", "Production")>]

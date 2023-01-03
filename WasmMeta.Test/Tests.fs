@@ -24,13 +24,13 @@ type ParserTests(output: ITestOutputHelper) =
     // Parsing symbols
 
     [<Fact; Trait("Category", "Symbol")>]
-    member _.``Parse Terminal`` () =
+    member _.``Parse Terminal f32`` () =
         @"\href{../syntax/types.html#syntax-valtype}{\mathsf{f32}}"
         |> run pSymbol
         |> testWith (Term "f32")
 
     [<Fact; Trait("Category", "Symbol")>]
-    member _.``Parse Non-terminal`` () =
+    member _.``Parse Non-terminal numtype`` () =
         @"\href{../syntax/types.html#syntax-numtype}{\mathit{numtype}}"
         |> run pSymbol
         |> testWith (Nonterm "numtype")
@@ -71,25 +71,50 @@ type ParserTests(output: ITestOutputHelper) =
     // Parsing whole formula
     [<Fact; Trait("Category", "Formula")>]
     member _.``Parse Number Type`` () =
-        """\begin{split}\begin{array}{llll}
+        """\[\begin{split}\begin{array}{llll}
         \def\mathdef2599#1{{}}\mathdef2599{number type} & \href{../syntax/types.html#syntax-numtype}{\mathit{numtype}} &::=&
         \href{../syntax/types.html#syntax-valtype}{\mathsf{i32}} ~|~
         \href{../syntax/types.html#syntax-valtype}{\mathsf{i64}} ~|~
         \href{../syntax/types.html#syntax-valtype}{\mathsf{f32}} ~|~
-        \href{../syntax/types.html#syntax-valtype}{\mathsf{f64}} \\ \end{array}\end{split}"""
+        \href{../syntax/types.html#syntax-valtype}{\mathsf{f64}} \\ \end{array}\end{split}\]"""
         |> run pFormula
-        |> test
+        |> testWith [(Nonterm "numtype", Production.MkUnion [Term "i32"; Term "i64"; Term "f32"; Term "f64"])]
 
     [<Fact; Trait("Category", "Formula")>]
     member _.``Parse Function Type`` () =
-        """\begin{split}\begin{array}{llll}
+        """\[\begin{split}\begin{array}{llll}
         \def\mathdef2599#1{{}}\mathdef2599{function type} & \href{../syntax/types.html#syntax-functype}{\mathit{functype}} &::=&
-        \href{../syntax/types.html#syntax-resulttype}{\mathit{resulttype}}
-        \href{../syntax/types.html#syntax-functype}{\rightarrow}
-        \href{../syntax/types.html#syntax-resulttype}{\mathit{resulttype}} \\ \end{array}\end{split}"""
+        \href{../syntax/types.html#syntax-resulttype}{\mathit{resulttype}} \href{../syntax/types.html#syntax-functype}{\rightarrow} \href{../syntax/types.html#syntax-resulttype}{\mathit{resulttype}} \\
+        \end{array}\end{split}\]"""
         |> run pFormula
-        |> test
+        |> testWith [(Nonterm "functype", Production.MkTuple [Nonterm "resulttype"; Special @"\rightarrow"; Nonterm "resulttype"])]
+    
+    [<Fact; Trait("Category", "Formula")>]
+    member _.``Parse Reference Type`` () =
+        """\[\begin{split}\begin{array}{llll}
+        \def\mathdef2599#1{{}}\mathdef2599{reference type} & \href{../syntax/types.html#syntax-reftype}{\mathit{reftype}} &::=&
+        \href{../syntax/types.html#syntax-reftype}{\mathsf{funcref}} ~|~ \href{../syntax/types.html#syntax-reftype}{\mathsf{externref}} \\
+        \end{array}\end{split}\]"""
+        |> run pFormula
+        |> testWith [(Nonterm "reftype", Production.MkUnion [Term "funcref"; Term "externref"])]
 
+    [<Fact; Trait("Category", "Formula")>]
+    member _.``Parse Value Type`` () =
+        """\[\begin{split}\begin{array}{llll}
+        \def\mathdef2599#1{{}}\mathdef2599{value type} & \href{../syntax/types.html#syntax-valtype}{\mathit{valtype}} &::=&
+        \href{../syntax/types.html#syntax-numtype}{\mathit{numtype}} ~|~ \href{../syntax/types.html#syntax-vectype}{\mathit{vectype}} ~|~ \href{../syntax/types.html#syntax-reftype}{\mathit{reftype}} \\
+        \end{array}\end{split}\]"""
+        |> run pFormula
+        |> testWith [(Nonterm "valtype", Production.MkUnion [Nonterm "numtype"; Nonterm "vectype"; Nonterm "reftype"])]
+
+    [<Fact; Trait("Category", "Formula")>]
+    member _.``Parse Result Type`` () =
+        """\[\begin{split}\begin{array}{llll}
+        \def\mathdef2599#1{{}}\mathdef2599{result type} & \href{../syntax/types.html#syntax-resulttype}{\mathit{resulttype}} &::=&
+        [\href{../syntax/conventions.html#syntax-vec}{\mathit{vec}}(\href{../syntax/types.html#syntax-valtype}{\mathit{valtype}})] \\
+        \end{array}\end{split}\]"""
+        |> run pFormula
+        |> testWith [(Nonterm "resulttype", Production.MkVec (Nonterm "valtype"))]
 
     [<Fact; Trait("Category", "Formula")>]
     member _.``Parse Types`` () =

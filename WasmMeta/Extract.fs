@@ -176,7 +176,9 @@ let pRhs =
     ]
     .>> spaces
 
-let pProd =
+type ProductionRule = Symbol * Production
+
+let pProd: Parser<ProductionRule, _> =
     pLhs
     .>> Tex.skipDefine
     .>> (skipChar '[' <|> spaces)

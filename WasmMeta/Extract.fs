@@ -3,12 +3,11 @@ module WasmMeta.Extract
 open FSharp.Data
 open FParsec
 
-type WasmSyntaxTypes = HtmlProvider<"/Users/bonjune/Research/WasmMeta/resources/webassembly.github.io/spec/core/syntax/types.html">
 
 let extractTypeSections () =
-    let document = WasmSyntaxTypes.GetSample().Html
-    let sections = document.CssSelect("section[id$='-types']")
-    sections
+    let document =
+        HtmlDocument.Load(__SOURCE_DIRECTORY__ + "/../resources/webassembly.github.io/spec/core/syntax/types.html")
+    document.CssSelect("section[id$='-types']")
 
 let extractFormula (section:HtmlNode) =
     let formula = section.CssSelect("div[class~='math']").Head.InnerText()

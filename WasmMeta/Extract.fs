@@ -101,13 +101,7 @@ module Symbol =
 
 [<RequireQualifiedAccess>]
 module Production =
-    /// `A_1` | ... | `A_n`
-    let pUnion = parse {
-        let! symbols = sepBy1 Symbol.pSymbol skipOr
-        if symbols.Length = 1
-        then return! fail "Require more than one symbol"
-        else return Union symbols
-    }
+
 
     /// A tuple separated by spaces
     let private pTupleSpaces = many1 Symbol.pSymbol
@@ -118,6 +112,7 @@ module Production =
         .>> pchar '~'
         .>>. sepBy1 Symbol.pSymbol (pchar '~')
         |>> (fun (head, tail) -> head :: tail)
+
     let pTuple =
         choice [
             attempt pTupleTilde
@@ -125,8 +120,13 @@ module Production =
         ]
         |>> Tuple
 
-    /// `A_1` ... `A_n`
-    // let pTuple = many1 Symbol.pSymbol |>> Tuple
+    /// `A_1` | ... | `A_n`
+    let pUnion = parse {
+        let! symbols = sepBy1 Symbol.pSymbol skipOr
+        if symbols.Length = 1
+        then return! fail "Require more than one symbol"
+        else return Union symbols
+    }
 
     let pVec =
         Tex.skipHref

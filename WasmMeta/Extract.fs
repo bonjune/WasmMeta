@@ -17,95 +17,106 @@ let extractFormula (section:HtmlNode) =
 type Symbol =
     | Term of string
     | Nonterm of string
+    | Optional of Symbol
     | Special of string
 
-type Production = {
-    ProductionKind: ProductionKind
-    Symbols: Symbol list
-}
-with
-    static member MkUnion symbols =
-        { ProductionKind = ProductionKind.Union; Symbols = symbols }
-    static member MkTuple symbols =
-        { ProductionKind = ProductionKind.Tuple; Symbols = symbols }
-    static member MkVec symbol =
-        { ProductionKind = ProductionKind.Vec; Symbols = [symbol] }
-
-and ProductionKind =
-    | Union = 1
-    | Tuple = 2
-    | Vec = 3
+type Production =
+    | Union of Symbol list
+    | Tuple of Symbol list
+    | Vec of Symbol
+    | Record of Map<Symbol, Symbol>
 
 let inline toString (cs: char list) =
     System.String.Concat(Array.ofList cs)
 
-let skipOpen = skipChar '{'
-let skipClose = skipChar '}'
-let skipOr = skipString @"~|~" .>> spaces
+let private skipOpen = skipChar '{'
+let private skipClose = skipChar '}'
+let private skipOr = skipString @"~|~" .>> spaces
 
 // Parsing Tex
 
-
-let skipBegin =
+let private skipBegin =
     skipString @"\[" <|> spaces
     .>> skipString @"\begin{split}\begin{array}"
     .>> skipOpen
     .>> skipMany1Till skipAnyChar skipClose
     .>> spaces
 
-let skipEnd =
+let private skipEnd =
     skipString @"\end{array}\end{split}"
     .>> (skipString @"\]" <|> spaces)
 
-let skipDefine = skipString @"&::=&" .>> spaces
-let skipProdSep = skipString @"\\" .>> spaces
+let private skipDefine = skipString @"&::=&" .>> spaces
+let private skipProdSep = skipString @"\\" .>> spaces
 
-let pMathDef =
+let private pMathDef =
     skipString @"\def\mathdef2599#1{{}}\mathdef2599"
     .>> skipOpen
     >>. many1Till anyChar skipClose
     .>> spaces .>> skipChar '&' .>> spaces
 
-let skipHref =
+let private skipHref =
     skipString @"\href"
     .>> skipOpen
     .>> skipMany1Till skipAnyChar skipClose
 
-// Parsing texts into Symbols and Productions
-let pMathit =
+// Parsing symbols
+
+let private pMathit =
     skipString @"\mathit"
     >>. skipOpen
     >>. many1Till anyChar skipClose
     |>> (fun cs -> Nonterm (toString cs))
 
-let pMathsf =
+let private pMathsf =
     skipString @"\mathsf"
     >>. skipOpen
     >>. many1Till anyChar skipClose
     |>> (fun cs -> Term (toString cs))
 
-let pArrow = pstring @"\rightarrow" |>> Special
+let private pArrow = pstring @"\rightarrow" |>> Special
 
-let pSymbol =
+let private pSymbolInner = choice [pMathit; pMathsf; pArrow]
+
+let private pSymbolNaive =
     skipHref
-    >>. between skipOpen skipClose (pMathit <|> pMathsf <|> pArrow)
+    >>. between skipOpen skipClose pSymbolInner
     .>> spaces
+
+let private pSymbolOptional =
+    skipHref
+    >>. between skipOpen skipClose pSymbolInner
+    .>> skipString @"^?"
+    .>> spaces
+    |>> Optional
+
+let pSymbol = choice [attempt pSymbolOptional; pSymbolNaive]
+
+// Parse productions
 
 /// `A_1` | ... | `A_n`
 let pUnion = parse {
-    let! symbols = sepBy1 pSymbol skipOr
+    let! symbols = sepBy1 pSymbolNaive skipOr
     if symbols.Length = 1
     then return! fail "Require more than one symbol"
-    else return Production.MkUnion symbols
+    else return Union symbols
 }
 
 /// `A_1` ... `A_n`
-let pTuple = many1 pSymbol |>> Production.MkTuple
+let pTuple = many1 pSymbolNaive |>> Tuple
 
-let pLhs = pMathDef >>. pSymbol
+let private pPair = pSymbolNaive .>> pchar '~' .>>. pSymbol
+let private pPairs = sepBy1 pPair (skipChar ',' .>> spaces)
+/// {key _term_, key _term_}
+let pRecord = between (skipString @"\{" .>> spaces) (skipString @"\}") pPairs |>> (Map >> Record)
+
+let pLhs = pMathDef >>. pSymbolNaive
 
 /// Reference: https://www.quanttec.com/fparsec/users-guide/parsing-alternatives.html
-let pRhs = choice [attempt pUnion; pTuple] .>> spaces
+let pRhs =
+    choice [attempt pRecord; attempt pUnion; pTuple]
+    .>> spaces
+
 let pProd =
     pLhs
     .>> skipDefine

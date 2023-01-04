@@ -1,4 +1,4 @@
-module WasmMeta.Tests
+module WasmMeta.ParsingTests
 
 open System
 open Xunit
@@ -7,19 +7,20 @@ open Xunit.Abstractions
 open WasmMeta.Extract
 open FParsec
 
-type ParserTests(output: ITestOutputHelper) =
-    let test (result: ParserResult<_, _>) =
-        match result with
-        | Success (result, state, pos) ->
-            output.WriteLine (sprintf "%A" result)
-            Assert.True(true)
-        | Failure (msg, err, state) ->
-            Assert.True(false, sprintf "%A" msg)
+let test (result: ParserResult<_, _>) =
+    match result with
+    | Success (result, state, pos) ->
+        Assert.True(true)
+    | Failure (msg, err, state) ->
+        Assert.True(false, sprintf "%A" msg)
 
-    let testWith expected (result: ParserResult<_, _>) =
-        match result with
-        | Success (result, _, _) -> Assert.StrictEqual(expected, result)
-        | Failure (msg, _, _) -> Assert.True(false, sprintf "%A" msg)
+let testWith expected (result: ParserResult<_, _>) =
+    match result with
+    | Success (result, _, _) -> Assert.StrictEqual(expected, result)
+    | Failure (msg, _, _) -> Assert.True(false, sprintf "%A" msg)
+
+type TypeSectionTests(output: ITestOutputHelper) =
+
 
     // Parsing symbols
 
@@ -152,3 +153,16 @@ type ParserTests(output: ITestOutputHelper) =
         |> List.map extractFormula
         |> List.map (run pFormula)
         |> List.map test
+
+type ValueSectionsTests(output: ITestOutputHelper) =
+    [<Fact; Trait("Category", "Formula")>]
+    member _.``Parse Names`` () =
+        """\[\begin{split}\begin{array}{llclll}
+        \def\mathdef2638#1{{}}\mathdef2638{name} & \href{../syntax/values.html#syntax-name}{\mathit{name}} &::=&
+        \href{../syntax/values.html#syntax-name}{\mathit{char}}^\ast \qquad\qquad (\mathrel{\mbox{if}} |\href{../binary/values.html#binary-utf8}{\mathrm{utf8}}(\href{../syntax/values.html#syntax-name}{\mathit{char}}^\ast)| &lt; 2^{32}) \\
+        \def\mathdef2638#1{{}}\mathdef2638{character} & \href{../syntax/values.html#syntax-name}{\mathit{char}} &::=&
+        \def\mathdef2679#1{\mathrm{U{+}#1}}\mathdef2679{00} ~|~ \dots ~|~ \def\mathdef2680#1{\mathrm{U{+}#1}}\mathdef2680{D7FF} ~|~
+        \def\mathdef2681#1{\mathrm{U{+}#1}}\mathdef2681{E000} ~|~ \dots ~|~ \def\mathdef2682#1{\mathrm{U{+}#1}}\mathdef2682{10FFFF} \\
+        \end{array}\end{split}\]"""
+        |> run pFormula
+        |> test

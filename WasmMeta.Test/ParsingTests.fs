@@ -4,6 +4,7 @@ open System
 open Xunit
 open Xunit.Abstractions
 
+open WasmMeta.Tokenize
 open WasmMeta.Extract
 open FParsec
 
@@ -21,9 +22,7 @@ let testWith expected (result: ParserResult<_, _>) =
 
 type TypeSectionTests(output: ITestOutputHelper) =
 
-
     // Parsing symbols
-
     [<Fact; Trait("Category", "Symbol")>]
     member _.``Parse Terminal f32`` () =
         @"\href{../syntax/types.html#syntax-valtype}{\mathsf{f32}}"
@@ -166,3 +165,56 @@ type ValueSectionsTests(output: ITestOutputHelper) =
         \end{array}\end{split}\]"""
         |> run pFormula
         |> test
+    
+    [<Fact; Trait("Category", "Formula")>]
+    member _.``Parse Bytes`` () =
+        """\[\begin{split}\begin{array}{llll}
+        \def\mathdef2638#1{{}}\mathdef2638{byte} & \href{../syntax/values.html#syntax-byte}{\mathit{byte}} &::=&
+        \def\mathdef2677#1{\mathtt{0x#1}}\mathdef2677{00} ~|~ \dots ~|~ \def\mathdef2678#1{\mathtt{0x#1}}\mathdef2678{FF} \\
+        \end{array}\end{split}\]"""
+        |> run pFormula
+        |> test
+    
+    [<Fact; Trait("Category", "Formula")>]
+    member _.``Parse Integers`` () =
+        """\[\begin{split}\begin{array}{llll}
+        \def\mathdef2638#1{{}}\mathdef2638{unsigned integer} & \href{../syntax/values.html#syntax-int}{\mathit{u}N} &::=&
+        0 ~|~ 1 ~|~ \dots ~|~ 2^N{-}1 \\
+        \def\mathdef2638#1{{}}\mathdef2638{signed integer} & \href{../syntax/values.html#syntax-int}{\mathit{s}N} &::=&
+        -2^{N-1} ~|~ \dots ~|~ {-}1 ~|~ 0 ~|~ 1 ~|~ \dots ~|~ 2^{N-1}{-}1 \\
+        \def\mathdef2638#1{{}}\mathdef2638{uninterpreted integer} & \href{../syntax/values.html#syntax-int}{\mathit{i}N} &::=&
+        \href{../syntax/values.html#syntax-int}{\mathit{u}N} \\
+        \end{array}\end{split}\]"""
+        |> run pFormula
+        |> test
+
+    [<Fact; Trait("Category", "Formula")>]
+    member _.``Parse Floating-Point`` () =
+        """\[\begin{split}\begin{array}{llcll}
+        \def\mathdef2638#1{{}}\mathdef2638{floating-point value} & \href{../syntax/values.html#syntax-float}{\mathit{f}N} &::=&
+        {+} \href{../syntax/values.html#syntax-float}{\mathit{f}\mathit{Nmag}} ~|~ {-} \href{../syntax/values.html#syntax-float}{\mathit{f}\mathit{Nmag}} \\
+        \def\mathdef2638#1{{}}\mathdef2638{floating-point magnitude} & \href{../syntax/values.html#syntax-float}{\mathit{f}\mathit{Nmag}} &::=&
+        (1 + \href{../syntax/values.html#syntax-int}{\mathit{u}M}\cdot 2^{-M}) \cdot 2^e & (\mathrel{\mbox{if}} -2^{E-1}+2 \leq e \leq 2^{E-1}-1) \\ &&|&
+        (0 + \href{../syntax/values.html#syntax-int}{\mathit{u}M}\cdot 2^{-M}) \cdot 2^e & (\mathrel{\mbox{if}} e = -2^{E-1}+2) \\ &&|&
+        \infty \\ &&|&
+        \href{../syntax/values.html#syntax-float}{\mathsf{nan}}(n) & (\mathrel{\mbox{if}} 1 \leq n &lt; 2^M) \\
+        \end{array}\end{split}\]"""
+        |> run pFormula
+        |> test
+        
+type TokenizerTests(output: ITestOutputHelper) =
+    [<Fact>]
+    member _.``Parse Simple Tex Command`` () =
+        @"\mathsf{f32}"
+        |> run command
+        |> testWith ((@"\mathsf", []), [Arg "f32"])
+
+    [<Fact>]
+    member _.``Parse Nested Tex Command`` () =
+        @"\href{../syntax/types.html#syntax-valtype}{\mathsf{f32}}"
+        |> run command
+        |> testWith ((@"\href", []), [Arg "../syntax/types.html#syntax-valtype"; Cmd ((@"\mathsf", []), [Arg "f32"])])
+
+        @"\href{../syntax/types.html#syntax-numtype}{\mathit{numtype}}"
+        |> run command
+        |> testWith ((@"\href", []), [Arg "../syntax/types.html#syntax-numtype"; Cmd ((@"\mathit", []), [Arg "numtype"])])

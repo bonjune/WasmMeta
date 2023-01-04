@@ -53,7 +53,7 @@ let private skipOpen = skipChar '{'
 let private skipClose = skipChar '}'
 let private skipOr = skipString @"~|~" .>> ws
 
-let private pBracket = skipOpen >>. many1Till anyChar skipClose |>> (fun cs -> toString cs)
+let private pBracket = skipOpen >>. many1Till anyChar skipClose |>> toString
 let private skipBracket = skipOpen >>. skipMany1Till skipAnyChar skipClose
 
 // Parsing Tex

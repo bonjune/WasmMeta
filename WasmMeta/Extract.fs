@@ -10,8 +10,10 @@ let extractTypeSections () =
     document.CssSelect("section[id$='-types']")
 
 let extractFormula (section:HtmlNode) =
-    let formula = section.CssSelect("div[class~='math']").Head.InnerText()
-    formula.Replace(" \\[", "").Replace("\\]", "")
+    let mathDiv = section.CssSelect("div[class~='math']")
+    if mathDiv.Length = 1
+    then mathDiv.Head.InnerText()
+    else failwith "<div class=\"math ...\"> must appear once in a section"
 
 type Symbol =
     | Term of string
@@ -37,8 +39,8 @@ let private skipOr = skipString @"~|~" .>> spaces
 [<RequireQualifiedAccess>]
 module Tex =
     let skipBegin =
-        skipString @"\[" <|> spaces
-        .>> skipString @"\begin{split}\begin{array}"
+        spaces
+        .>> skipString @"\[\begin{split}\begin{array}"
         .>> skipOpen
         .>> skipMany1Till skipAnyChar skipClose
         .>> spaces
@@ -46,6 +48,7 @@ module Tex =
     let skipEnd =
         skipString @"\end{array}\end{split}"
         .>> (skipString @"\]" <|> spaces)
+        .>> spaces
 
     let skipDefine = skipString @"&::=&" .>> spaces
     let skipProdSep = skipString @"\\" .>> spaces

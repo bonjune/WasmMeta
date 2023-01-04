@@ -2,47 +2,59 @@ module WasmMeta.Tokenize
 
 open FParsec
 
+// Parse Tex Commands
+// Reference: https://en.wikipedia.org/wiki/Help:Displaying_a_formula#LaTeX_basics
 type Command = CommandHead * Argument list
 /// Command Name and Optional Parameters
 and CommandHead = string * string list
+
 /// An argument can be a string or a command
 and Argument =
     | Arg of string
     | Cmd of Command
 
 let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-let texSpecials = [ '#'; '$'; '%'; '^'; '&'; '_'; '{'; '}'; '~'; '\\' ]
 
-// let startMath = pstring @"\["
-// let endMath = pstring @"\]"
-
-let openBracket = pchar '{'
-let closeBracket = pchar '}'
-let slash = pchar '\\'
-let comma = pchar ','
-let ch = anyOf letters
-let word = many1Chars ch
+let private openBracket = pchar '{'
+let private closeBracket = pchar '}'
+let private slash = pchar '\\'
+let private comma = pchar ','
+let private letter = anyOf letters
+let private letterWith cs = anyOf (letters + cs)
+let private word = many1Chars letter
 
 // Parse Command Heads
-let commandName = many1Chars2 slash ch
-let optionalParams = skipChar '[' >>. sepBy1 word comma .>> skipChar ']'
+let private commandName = slash >>. many1Chars2 letter (letterWith "./-#")
+let private optionalParams = skipChar '[' >>. sepBy1 word comma .>> skipChar ']'
 
-let commandHead = commandName .>>. (attempt optionalParams <|> preturn [])
+let private commandHead = commandName .>>. (attempt optionalParams <|> preturn [])
 
-// Parse Command Arguments
 // Referece: Creating a recursive parser in FParsec
 // - https://hestia.typepad.com/flatlander/2011/07/recursive-parsers-in-fparsec.html
 // - https://stackoverflow.com/questions/71328877/how-to-parse-recusrive-grammar-in-fparsec?noredirect=1&lq=1
-let command, commandRef = createParserForwardedToRef ()
-let strArg = many1Chars (anyOf (letters + "./-#")) |>> Arg
-let cmdArg = command |>> Cmd
-let argument: Parser<Argument, unit> = between openBracket closeBracket (attempt strArg <|> cmdArg)
+let command, private commandRef = createParserForwardedToRef ()
 
-commandRef.Value <- commandHead .>>. many argument
+let strArg, private strArgRef = createParserForwardedToRef ()
+let private cmdArg = command |>> Cmd
 
-let special: Parser<_, unit> =
-    texSpecials
-    |> List.map pchar
-    |> choice
+let private argument: Parser<Argument, unit> =
+    between openBracket closeBracket (attempt cmdArg <|> (strArg |>> Arg))
 
+strArgRef.Value <-
+    attempt (between openBracket closeBracket strArg)
+    <|> manyChars (anyOf (letters + "./-# "))
+commandRef.Value <- commandHead .>>. many argument .>> spaces
 
+type SingleCommand = string
+
+// TODO: Define non-letter character parser
+let nonLetter = anyChar
+let singleCommand = slash >>. anyChar
+
+// Parse special characters
+type Special = char
+
+let private texSpecials =
+    List.map pchar [ '#'; '$'; '%'; '^'; '&'; '_'; '{'; '}'; '~'; '\\' ]
+
+let special: Parser<Special, unit> = choice texSpecials

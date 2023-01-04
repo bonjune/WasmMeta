@@ -82,10 +82,7 @@ module Tex =
         .>> skipBracket
         .>> ws .>> skipChar '&' .>> ws
 
-    let private skipHref' =
-        skipString @"\href"
-        .>> skipBracket
-
+    let private skipHref' = skipString @"\href" .>> skipBracket
     let skipHref = attempt skipHref' <|> ws
 
 

@@ -79,7 +79,7 @@ module Tex =
         .>> pint32 // 2599
         .>> skipString @"#1{{}}\mathdef"
         .>> pint32 // 2599
-        .>> pBracket anyChar
+        .>> skipBracket
         .>> ws .>> skipChar '&' .>> ws
 
     let private skipHref' =

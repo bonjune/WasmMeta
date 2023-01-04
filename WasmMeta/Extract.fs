@@ -53,33 +53,24 @@ let private skipOpen = skipChar '{'
 let private skipClose = skipChar '}'
 let private skipOr = skipString @"~|~" .>> ws
 
-let private pBracket inner = skipOpen >>. many1Till inner skipClose
+let private pBracket = skipOpen >>. many1Till anyChar skipClose |>> (fun cs -> toString cs)
 let private skipBracket = skipOpen >>. skipMany1Till skipAnyChar skipClose
 
 // Parsing Tex
 [<RequireQualifiedAccess>]
 module Tex =
-    let skipBegin =
-        ws
-        .>> skipString @"\[\begin{split}\begin{array}"
-        .>> skipBracket
-        .>> ws
+    let skipBegin = ws .>> skipString @"\[\begin{split}\begin{array}" .>> skipBracket .>> ws
 
-    let skipEnd =
-        skipString @"\end{array}\end{split}"
-        .>> (skipString @"\]" <|> ws)
-        .>> ws
+    let skipEnd = skipString @"\end{array}\end{split}" .>> (skipString @"\]" <|> ws) .>> ws
 
     let skipDefine = skipString @"&::=&" .>> ws
     let skipProdSep = skipString @"\\" .>> ws
 
     /// Parse `\def\mathdef2599#1{{}}\mathdef2599{number type} & `
     let pMathDef =
-        skipString @"\def\mathdef"
-        .>> pint32 // 2599
-        .>> skipString @"#1{{}}\mathdef"
-        .>> pint32 // 2599
-        .>> skipBracket
+        skipString @"\def\mathdef" .>> pint32 // 2599
+        .>> skipString @"#1{{}}\mathdef" .>> pint32 // 2599
+        >>. pBracket
         .>> ws .>> skipChar '&' .>> ws
 
     let private skipHref' = skipString @"\href" .>> skipBracket
@@ -90,8 +81,8 @@ module Tex =
 module Symbol =
     let pNonterm =
         skipString @"\mathit"
-        >>. pBracket anyChar
-        |>> (fun cs -> Nonterm (toString cs))
+        >>. pBracket
+        |>> Nonterm
 
     let pNontermOf s =
         skipString @"\mathit"
@@ -100,9 +91,8 @@ module Symbol =
 
     let pTerm =
         skipString @"\mathsf"
-        >>. pBracket anyChar
-        |>> (fun cs -> Term (toString cs))
-
+        >>. pBracket
+        |>> Term
 
     let pArrow = pstring @"\rightarrow" |>> Special
 

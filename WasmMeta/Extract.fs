@@ -3,6 +3,10 @@ module WasmMeta.Extract
 open FSharp.Data
 open FParsec
 
+let extractValueSections () =
+    let document =
+        HtmlDocument.Load(__SOURCE_DIRECTORY__ + "/../resources/webassembly.github.io/spec/core/syntax/values.html")
+    document.CssSelect("section[id='values'] > section")
 
 let extractTypeSections () =
     let document =
@@ -18,9 +22,12 @@ let extractFormula (section:HtmlNode) =
 type Symbol =
     | Term of string
     | Nonterm of string
-    | Optional of Symbol
     | Special of string
     | Named of string * Symbol
+    | Optional of Symbol            // A^?
+    | ManyPossibleEmpty of Symbol   // A^*
+    | Many of Symbol                // A^n
+    | NonEmpty of Symbol            // A^+
 
 type Production =
     | Union of Symbol list
@@ -31,48 +38,54 @@ type Production =
 let inline toString (cs: char list) =
     System.String.Concat(Array.ofList cs)
 
+let private skipTexSpaces = choice [ skipString @"\quad"; skipString @"\qquad" ]
+let private ws = spaces .>> many skipTexSpaces .>> spaces
+
 let private skipOpen = skipChar '{'
 let private skipClose = skipChar '}'
-let private skipOr = skipString @"~|~" .>> spaces
+let private skipOr = skipString @"~|~" .>> ws
+
+let private pBracket inner = skipOpen >>. many1Till inner skipClose
+let private skipBracket = skipOpen >>. skipMany1Till skipAnyChar skipClose
 
 // Parsing Tex
 [<RequireQualifiedAccess>]
 module Tex =
     let skipBegin =
-        spaces
+        ws
         .>> skipString @"\[\begin{split}\begin{array}"
-        .>> skipOpen
-        .>> skipMany1Till skipAnyChar skipClose
-        .>> spaces
+        .>> skipBracket
+        .>> ws
 
     let skipEnd =
         skipString @"\end{array}\end{split}"
-        .>> (skipString @"\]" <|> spaces)
-        .>> spaces
+        .>> (skipString @"\]" <|> ws)
+        .>> ws
 
-    let skipDefine = skipString @"&::=&" .>> spaces
-    let skipProdSep = skipString @"\\" .>> spaces
+    let skipDefine = skipString @"&::=&" .>> ws
+    let skipProdSep = skipString @"\\" .>> ws
 
+    /// Parse `\def\mathdef2599#1{{}}\mathdef2599{number type} & `
     let pMathDef =
-        skipString @"\def\mathdef2599#1{{}}\mathdef2599"
-        .>> skipOpen
-        >>. many1Till anyChar skipClose
-        .>> spaces .>> skipChar '&' .>> spaces
+        skipString @"\def\mathdef"
+        .>> pint32 // 2599
+        .>> skipString @"#1{{}}\mathdef"
+        .>> pint32 // 2599
+        .>> pBracket anyChar
+        .>> ws .>> skipChar '&' .>> ws
 
     let private skipHref' =
         skipString @"\href"
-        .>> skipOpen
-        .>> skipMany1Till skipAnyChar skipClose
+        .>> skipBracket
 
-    let skipHref = attempt skipHref' <|> spaces
+    let skipHref = attempt skipHref' <|> ws
 
 
 [<RequireQualifiedAccess>]
 module Symbol =
     let pNonterm =
         skipString @"\mathit"
-        >>. skipOpen
-        >>. many1Till anyChar skipClose
+        >>. pBracket anyChar
         |>> (fun cs -> Nonterm (toString cs))
 
     let pNontermOf s =
@@ -82,26 +95,24 @@ module Symbol =
 
     let pTerm =
         skipString @"\mathsf"
-        >>. skipOpen
-        >>. many1Till anyChar skipClose
+        >>. pBracket anyChar
         |>> (fun cs -> Term (toString cs))
 
 
     let pArrow = pstring @"\rightarrow" |>> Special
 
-    let pSymbolInner = choice [pNonterm; pTerm; pArrow]
-
-    let pSymbolNaive =
+    let private pSymbolFirst =
         Tex.skipHref
-        >>. between skipOpen skipClose pSymbolInner
-        .>> spaces
+        >>. between skipOpen skipClose (choice [pNonterm; pTerm; pArrow])
 
-    let pSymbolOptional =
-        Tex.skipHref
-        >>. between skipOpen skipClose pSymbolInner
-        .>> skipString @"^?"
-        .>> spaces
-        |>> Optional
+    let pSymbolNaive    =   pSymbolFirst .>> ws
+
+    let pSymbolOptional =   pSymbolFirst .>> skipString @"^?" .>> ws |>> Optional
+    
+    let pSymbolMany     =   pSymbolFirst .>> skipString @"^n" .>> ws |>> Many
+    
+    let pSymbolManyPossibleEmpty =
+        pSymbolFirst .>> skipString @"^\ast" .>> ws |>> ManyPossibleEmpty
 
     let pSymbolNamed =
         Tex.skipHref
@@ -109,6 +120,8 @@ module Symbol =
         .>> pchar '~'
         .>>. choice [
             attempt pSymbolOptional
+            attempt pSymbolMany
+            attempt pSymbolManyPossibleEmpty
             pSymbolNaive
         ]
         |>> (fun (name, sym) ->
@@ -121,13 +134,15 @@ module Symbol =
         choice [
             attempt pSymbolNamed
             attempt pSymbolOptional
+            attempt pSymbolMany
+            attempt pSymbolManyPossibleEmpty
             pSymbolNaive
         ]
 
 [<RequireQualifiedAccess>]
 module Production =
-    /// A tuple separated by spaces
-    let private pTupleSpaces = many1 Symbol.pSymbol
+    /// A tuple separated by ws
+    let private pTuplews = many1 Symbol.pSymbol
 
     /// A tuple separated by '~', but with more than two occurrences of symbols
     let private pTupleTilde =
@@ -139,7 +154,7 @@ module Production =
     let pTuple =
         choice [
             attempt pTupleTilde
-            pTupleSpaces
+            pTuplews
         ]
         |>> Tuple
 
@@ -158,10 +173,10 @@ module Production =
         |>> Vec
 
     let private pPair = Symbol.pSymbolNaive .>> pchar '~' .>>. Symbol.pSymbol
-    let private pPairs = sepBy1 pPair (skipChar ',' .>> spaces)
+    let private pPairs = sepBy1 pPair (skipChar ',' .>> ws)
     /// {key _term_, key _term_}
     let pRecord =
-        between (skipString @"\{" .>> spaces) (skipString @"\}") pPairs
+        between (skipString @"\{" .>> ws) (skipString @"\}") pPairs
         |>> (Map >> Record)
 
 // Parse formulae
@@ -176,17 +191,17 @@ let pRhs =
         attempt Production.pVec
         Production.pTuple
     ]
-    .>> spaces
+    .>> ws
 
 type ProductionRule = Symbol * Production
 
 let pProd: Parser<ProductionRule, _> =
     pLhs
     .>> Tex.skipDefine
-    .>> (skipChar '[' <|> spaces)
+    .>> (skipChar '[' <|> ws)
     .>>. pRhs
-    .>> (skipChar ']' <|> spaces)
-    .>> spaces
+    .>> (skipChar ']' <|> ws)
+    .>> ws
 
 let pFormula: Parser<_, unit> =
     between Tex.skipBegin Tex.skipEnd (sepEndBy1 pProd Tex.skipProdSep)

@@ -38,7 +38,15 @@ type Production =
 let inline toString (cs: char list) =
     System.String.Concat(Array.ofList cs)
 
-let private skipTexSpaces = choice [ skipString @"\quad"; skipString @"\qquad" ]
+let private skipTexSpaces = choice [
+    skipString @"\quad"
+    skipString @"\qquad"
+    skipString @"\ "
+    skipString @"\,"
+    skipString @"\:"
+    skipString @"\;"
+    skipString @"\!"
+]
 let private ws = spaces .>> many skipTexSpaces .>> spaces
 
 let private skipOpen = skipChar '{'

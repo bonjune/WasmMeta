@@ -22,6 +22,19 @@ let private comma = pchar ','
 let private letter = anyOf letters
 let private letterWith cs = anyOf (letters + cs)
 let private word = many1Chars letter
+let private texSpaces =
+    choice [
+        skipString @"\quad"
+        skipString @"\qquad"
+        skipString @"\ "
+        skipString @"\,"
+        skipString @"\:"
+        skipString @"\;"
+        skipString @"\!"
+        skipChar   '~'
+    ]
+    .>> spaces
+let private ws = spaces .>> many texSpaces
 
 // Parse Command Heads
 let private commandName = slash >>. many1Chars2 letter (letterWith "./-#")
@@ -42,8 +55,8 @@ let private argument: Parser<Argument, unit> =
 
 strArgRef.Value <-
     attempt (between openBracket closeBracket strArg)
-    <|> manyChars (anyOf (letters + "./-# "))
-commandRef.Value <- commandHead .>>. many argument .>> spaces
+    <|> manyChars (letterWith "./-# ")
+commandRef.Value <- commandHead .>>. many argument .>> ws
 
 type SingleCommand = string
 
@@ -58,3 +71,17 @@ let private texSpecials =
     List.map pchar [ '#'; '$'; '%'; '^'; '&'; '_'; '{'; '}'; '~'; '\\' ]
 
 let special: Parser<Special, unit> = choice texSpecials
+
+type TexToken =
+    | TexCommand of Command
+    | TexWord of string
+
+let token =
+    choice [
+        attempt command |>> TexCommand
+        attempt word |>> TexWord
+        nonLetter |>> (string >> TexWord)
+    ]
+    .>> ws
+
+let parseTex = many token

@@ -230,18 +230,47 @@ type TokenizerTests(output: ITestOutputHelper) =
     member _.``Parse Nested Tex Command 2``() =
         @"\href{../syntax/values.html#syntax-int}{\mathit{u32}}^?"
         |> run command
-        |> testWith (
-            (@"href", []),
-            [ Arg "../syntax/values.html#syntax-int"
-              Cmd((@"mathit", []), [ Arg "u32" ]) ]
-        )
+        |> testWith ((@"href", []), [ Arg "../syntax/values.html#syntax-int"; Cmd((@"mathit", []), [ Arg "u32" ]) ])
 
     [<Fact>]
     member _.``Parse Nested Tex Command 3``() =
         """\def\mathdef2599#1{{}}\mathdef2599{value type}"""
         |> run (many command)
-        |> testWith ( [
-            (("def", []), [])
-            (("mathdef2599#1", []), [Arg ""])
-            (("mathdef2599", []), [Arg "value type"])
-        ] )
+        |> testWith (
+            [ (("def", []), [])
+              (("mathdef2599#1", []), [ Arg "" ])
+              (("mathdef2599", []), [ Arg "value type" ]) ]
+        )
+
+    [<Fact>]
+    member _.``Parse Many Commands and Characters``() =
+        @"\href{../syntax/types.html#syntax-valtype}{\mathsf{i32}}
+        ~|~ \href{../syntax/types.html#syntax-valtype}{\mathsf{i64}}
+        ~|~ \href{../syntax/types.html#syntax-valtype}{\mathsf{f32}}
+        ~|~ \href{../syntax/types.html#syntax-valtype}{\mathsf{f64}}"
+        |> run parseTex
+        |> testWith (
+            [ TexCommand(
+                  ("href", []),
+                  [ Arg "../syntax/types.html#syntax-valtype"
+                    Cmd(("mathsf", []), [ Arg "i32" ]) ]
+              )
+              TexWord "|"
+              TexCommand(
+                  ("href", []),
+                  [ Arg "../syntax/types.html#syntax-valtype"
+                    Cmd(("mathsf", []), [ Arg "i64" ]) ]
+              )
+              TexWord "|"
+              TexCommand(
+                  ("href", []),
+                  [ Arg "../syntax/types.html#syntax-valtype"
+                    Cmd(("mathsf", []), [ Arg "f32" ]) ]
+              )
+              TexWord "|"
+              TexCommand(
+                  ("href", []),
+                  [ Arg "../syntax/types.html#syntax-valtype"
+                    Cmd(("mathsf", []), [ Arg "f64" ]) ]
+              ) ]
+        )

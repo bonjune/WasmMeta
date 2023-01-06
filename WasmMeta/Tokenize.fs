@@ -25,20 +25,21 @@ let private closeBracketLiteral = pstring @"\}"
 let private letter = anyOf letters
 let private letterWith cs = anyOf (letters + cs)
 let private word = many1Chars letter
+
 let private texSpaces =
-    choice [
-        skipString @"\quad"
-        skipString @"\qquad"
-        skipString @"\ "
-        skipString @"\,"
-        skipString @"\:"
-        skipString @"\;"
-        skipString @"\!"
-        skipString @"\\"
-        skipChar   '&'
-        skipChar   '~'
-    ]
+    choice
+        [ skipString @"\quad"
+          skipString @"\qquad"
+          skipString @"\ "
+          skipString @"\,"
+          skipString @"\:"
+          skipString @"\;"
+          skipString @"\!"
+          skipString @"\\"
+          skipChar '&'
+          skipChar '~' ]
     .>> spaces
+
 let private ws = spaces .>> many texSpaces
 
 // Parse Command Heads
@@ -49,13 +50,13 @@ let private commandHead = commandName .>>. (attempt optionalParams <|> preturn [
 
 /// ```
 /// <command>  ::= <commandHead> <argument>*
-/// 
+///
 /// <commandHead> ::= <commandName> <optionalParams>?
-/// 
+///
 /// <commandName> ::= \<letter> <letter>*
-/// 
+///
 /// <optionalParams> ::= [ <word> , ... , <word> ]
-/// 
+///
 /// <argument\ ::= { <command> }
 ///            |     <string>
 ///
@@ -65,9 +66,9 @@ let private commandHead = commandName .>>. (attempt optionalParams <|> preturn [
 /// Referece: Creating a recursive parser in FParsec
 /// - https://hestia.typepad.com/flatlander/2011/07/recursive-parsers-in-fparsec.html
 /// - https://stackoverflow.com/questions/71328877/how-to-parse-recusrive-grammar-in-fparsec?noredirect=1&lq=1
-let command, private commandRef = createParserForwardedToRef ()
+let private command, private commandRef = createParserForwardedToRef ()
 
-let strArg, private strArgRef = createParserForwardedToRef ()
+let private strArg, private strArgRef = createParserForwardedToRef ()
 let private cmdArg = command |>> Cmd
 
 let private argument: Parser<Argument, unit> =
@@ -76,21 +77,13 @@ let private argument: Parser<Argument, unit> =
 strArgRef.Value <-
     attempt (between openBracket closeBracket strArg)
     <|> manyChars (letterWith "./-# ")
+
 commandRef.Value <- commandHead .>>. many argument .>> ws
 
 type SingleCommand = string
 
 // TODO: Define non-letter character parser
-let nonLetter = anyChar
-let singleCommand = slash >>. anyChar
-
-// Parse special characters
-type Special = char
-
-let private texSpecials =
-    List.map pchar [ '#'; '$'; '%'; '^'; '&'; '_'; '{'; '}'; '~'; '\\' ]
-
-let special: Parser<Special, unit> = choice texSpecials
+let private nonLetter = anyChar
 
 type TexToken =
     | TexCommand of Command
@@ -100,15 +93,14 @@ type TexToken =
 /// <token> ::= <command>
 ///         |   <word>
 /// ```
-let token =
-    choice [
-        attempt command |>> TexCommand
-        attempt openBracketLiteral |>> TexWord
-        attempt closeBracketLiteral |>> TexWord
-        attempt equal |>> TexWord
-        attempt word |>> TexWord
-        nonLetter |>> (string >> TexWord)
-    ]
+let private token =
+    choice
+        [ attempt command |>> TexCommand
+          attempt openBracketLiteral |>> TexWord
+          attempt closeBracketLiteral |>> TexWord
+          attempt equal |>> TexWord
+          attempt word |>> TexWord
+          nonLetter |>> (string >> TexWord) ]
     .>> ws
 
 

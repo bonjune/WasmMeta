@@ -20,6 +20,8 @@ let private closeBracket = pchar '}'
 let private slash = pchar '\\'
 let private comma = pchar ','
 let private equal = pstring @"::="
+let private openBracketLiteral = pstring @"\{"
+let private closeBracketLiteral = pstring @"\}"
 let private letter = anyOf letters
 let private letterWith cs = anyOf (letters + cs)
 let private word = many1Chars letter
@@ -101,6 +103,8 @@ type TexToken =
 let token =
     choice [
         attempt command |>> TexCommand
+        attempt openBracketLiteral |>> TexWord
+        attempt closeBracketLiteral |>> TexWord
         attempt equal |>> TexWord
         attempt word |>> TexWord
         nonLetter |>> (string >> TexWord)

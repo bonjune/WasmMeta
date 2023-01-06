@@ -19,34 +19,35 @@ let ``Parse Number Type Math Block`` () =
         \I32 ~|~ \I64 ~|~ \F32 ~|~ \F64 \\
     \end{array}"
     |> run parseTex
-    |> testWith [ TexCommand
-                      { Head = { Name = "begin"; OptParams = [] }
-                        Args = [ Arg "array"; Arg "llll" ] }
-                  TexCommand
-                      { Head = { Name = "production"; OptParams = [] }
-                        Args = [ Arg "number type" ] }
-                  TexCommand
-                      { Head = { Name = "numtype"; OptParams = [] }
-                        Args = [] }
-                  TexWord "::="
-                  TexCommand
-                      { Head = { Name = "I32"; OptParams = [] }
-                        Args = [] }
-                  TexWord "|"
-                  TexCommand
-                      { Head = { Name = "I64"; OptParams = [] }
-                        Args = [] }
-                  TexWord "|"
-                  TexCommand
-                      { Head = { Name = "F32"; OptParams = [] }
-                        Args = [] }
-                  TexWord "|"
-                  TexCommand
-                      { Head = { Name = "F64"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "end"; OptParams = [] }
-                        Args = [ Arg "array" ] } ]
+    |> testWith
+        [ TexCommand
+              { Head = { Name = "begin"; OptParams = [] }
+                Args = [ Arg "array"; Arg "llll" ] }
+          TexCommand
+              { Head = { Name = "production"; OptParams = [] }
+                Args = [ Arg "number type" ] }
+          TexCommand
+              { Head = { Name = "numtype"; OptParams = [] }
+                Args = [] }
+          TexWord "::="
+          TexCommand
+              { Head = { Name = "I32"; OptParams = [] }
+                Args = [] }
+          TexWord "|"
+          TexCommand
+              { Head = { Name = "I64"; OptParams = [] }
+                Args = [] }
+          TexWord "|"
+          TexCommand
+              { Head = { Name = "F32"; OptParams = [] }
+                Args = [] }
+          TexWord "|"
+          TexCommand
+              { Head = { Name = "F64"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "end"; OptParams = [] }
+                Args = [ Arg "array" ] } ]
 
 [<Fact; Trait("Category", "Tokenize")>]
 let ``Parse Vector Type Math Block`` () =
@@ -55,22 +56,23 @@ let ``Parse Vector Type Math Block`` () =
         \V128 \\
     \end{array}"
     |> run parseTex
-    |> testWith [ TexCommand
-                      { Head = { Name = "begin"; OptParams = [] }
-                        Args = [ Arg "array"; Arg "llll" ] }
-                  TexCommand
-                      { Head = { Name = "production"; OptParams = [] }
-                        Args = [ Arg "vector type" ] }
-                  TexCommand
-                      { Head = { Name = "vectype"; OptParams = [] }
-                        Args = [] }
-                  TexWord "::="
-                  TexCommand
-                      { Head = { Name = "V128"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "end"; OptParams = [] }
-                        Args = [ Arg "array" ] } ]
+    |> testWith
+        [ TexCommand
+              { Head = { Name = "begin"; OptParams = [] }
+                Args = [ Arg "array"; Arg "llll" ] }
+          TexCommand
+              { Head = { Name = "production"; OptParams = [] }
+                Args = [ Arg "vector type" ] }
+          TexCommand
+              { Head = { Name = "vectype"; OptParams = [] }
+                Args = [] }
+          TexWord "::="
+          TexCommand
+              { Head = { Name = "V128"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "end"; OptParams = [] }
+                Args = [ Arg "array" ] } ]
 
 [<Fact; Trait("Category", "Tokenize")>]
 let ``Parse Reference Type Math Block`` () =
@@ -79,26 +81,27 @@ let ``Parse Reference Type Math Block`` () =
         \FUNCREF ~|~ \EXTERNREF \\
     \end{array}"
     |> run parseTex
-    |> testWith [ TexCommand
-                      { Head = { Name = "begin"; OptParams = [] }
-                        Args = [ Arg "array"; Arg "llll" ] }
-                  TexCommand
-                      { Head = { Name = "production"; OptParams = [] }
-                        Args = [ Arg "reference type" ] }
-                  TexCommand
-                      { Head = { Name = "reftype"; OptParams = [] }
-                        Args = [] }
-                  TexWord "::="
-                  TexCommand
-                      { Head = { Name = "FUNCREF"; OptParams = [] }
-                        Args = [] }
-                  TexWord "|"
-                  TexCommand
-                      { Head = { Name = "EXTERNREF"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "end"; OptParams = [] }
-                        Args = [ Arg "array" ] } ]
+    |> testWith
+        [ TexCommand
+              { Head = { Name = "begin"; OptParams = [] }
+                Args = [ Arg "array"; Arg "llll" ] }
+          TexCommand
+              { Head = { Name = "production"; OptParams = [] }
+                Args = [ Arg "reference type" ] }
+          TexCommand
+              { Head = { Name = "reftype"; OptParams = [] }
+                Args = [] }
+          TexWord "::="
+          TexCommand
+              { Head = { Name = "FUNCREF"; OptParams = [] }
+                Args = [] }
+          TexWord "|"
+          TexCommand
+              { Head = { Name = "EXTERNREF"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "end"; OptParams = [] }
+                Args = [ Arg "array" ] } ]
 
 [<Fact; Trait("Category", "Tokenize")>]
 let ``Parse Value Type Math Block`` () =
@@ -107,30 +110,31 @@ let ``Parse Value Type Math Block`` () =
         \numtype ~|~ \vectype ~|~ \reftype \\
     \end{array}"
     |> run parseTex
-    |> testWith [ TexCommand
-                      { Head = { Name = "begin"; OptParams = [] }
-                        Args = [ Arg "array"; Arg "llll" ] }
-                  TexCommand
-                      { Head = { Name = "production"; OptParams = [] }
-                        Args = [ Arg "value type" ] }
-                  TexCommand
-                      { Head = { Name = "valtype"; OptParams = [] }
-                        Args = [] }
-                  TexWord "::="
-                  TexCommand
-                      { Head = { Name = "numtype"; OptParams = [] }
-                        Args = [] }
-                  TexWord "|"
-                  TexCommand
-                      { Head = { Name = "vectype"; OptParams = [] }
-                        Args = [] }
-                  TexWord "|"
-                  TexCommand
-                      { Head = { Name = "reftype"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "end"; OptParams = [] }
-                        Args = [ Arg "array" ] } ]
+    |> testWith
+        [ TexCommand
+              { Head = { Name = "begin"; OptParams = [] }
+                Args = [ Arg "array"; Arg "llll" ] }
+          TexCommand
+              { Head = { Name = "production"; OptParams = [] }
+                Args = [ Arg "value type" ] }
+          TexCommand
+              { Head = { Name = "valtype"; OptParams = [] }
+                Args = [] }
+          TexWord "::="
+          TexCommand
+              { Head = { Name = "numtype"; OptParams = [] }
+                Args = [] }
+          TexWord "|"
+          TexCommand
+              { Head = { Name = "vectype"; OptParams = [] }
+                Args = [] }
+          TexWord "|"
+          TexCommand
+              { Head = { Name = "reftype"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "end"; OptParams = [] }
+                Args = [ Arg "array" ] } ]
 
 
 [<Fact; Trait("Category", "Tokenize")>]
@@ -140,29 +144,30 @@ let ``Parse Result Type Math Block`` () =
         [\vec(\valtype)] \\
     \end{array}"
     |> run parseTex
-    |> testWith [ TexCommand
-                      { Head = { Name = "begin"; OptParams = [] }
-                        Args = [ Arg "array"; Arg "llll" ] }
-                  TexCommand
-                      { Head = { Name = "production"; OptParams = [] }
-                        Args = [ Arg "result type" ] }
-                  TexCommand
-                      { Head = { Name = "resulttype"; OptParams = [] }
-                        Args = [] }
-                  TexWord "::="
-                  TexWord "["
-                  TexCommand
-                      { Head = { Name = "vec"; OptParams = [] }
-                        Args = [] }
-                  TexWord "("
-                  TexCommand
-                      { Head = { Name = "valtype"; OptParams = [] }
-                        Args = [] }
-                  TexWord ")"
-                  TexWord "]"
-                  TexCommand
-                      { Head = { Name = "end"; OptParams = [] }
-                        Args = [ Arg "array" ] } ]
+    |> testWith
+        [ TexCommand
+              { Head = { Name = "begin"; OptParams = [] }
+                Args = [ Arg "array"; Arg "llll" ] }
+          TexCommand
+              { Head = { Name = "production"; OptParams = [] }
+                Args = [ Arg "result type" ] }
+          TexCommand
+              { Head = { Name = "resulttype"; OptParams = [] }
+                Args = [] }
+          TexWord "::="
+          TexWord "["
+          TexCommand
+              { Head = { Name = "vec"; OptParams = [] }
+                Args = [] }
+          TexWord "("
+          TexCommand
+              { Head = { Name = "valtype"; OptParams = [] }
+                Args = [] }
+          TexWord ")"
+          TexWord "]"
+          TexCommand
+              { Head = { Name = "end"; OptParams = [] }
+                Args = [ Arg "array" ] } ]
 
 [<Fact; Trait("Category", "Tokenize")>]
 let ``Parse Function Type Math Block`` () =
@@ -171,28 +176,29 @@ let ``Parse Function Type Math Block`` () =
         \resulttype \to \resulttype \\
     \end{array}"
     |> run parseTex
-    |> testWith [ TexCommand
-                      { Head = { Name = "begin"; OptParams = [] }
-                        Args = [ Arg "array"; Arg "llll" ] }
-                  TexCommand
-                      { Head = { Name = "production"; OptParams = [] }
-                        Args = [ Arg "function type" ] }
-                  TexCommand
-                      { Head = { Name = "functype"; OptParams = [] }
-                        Args = [] }
-                  TexWord "::="
-                  TexCommand
-                      { Head = { Name = "resulttype"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "to"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "resulttype"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "end"; OptParams = [] }
-                        Args = [ Arg "array" ] } ]
+    |> testWith
+        [ TexCommand
+              { Head = { Name = "begin"; OptParams = [] }
+                Args = [ Arg "array"; Arg "llll" ] }
+          TexCommand
+              { Head = { Name = "production"; OptParams = [] }
+                Args = [ Arg "function type" ] }
+          TexCommand
+              { Head = { Name = "functype"; OptParams = [] }
+                Args = [] }
+          TexWord "::="
+          TexCommand
+              { Head = { Name = "resulttype"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "to"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "resulttype"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "end"; OptParams = [] }
+                Args = [ Arg "array" ] } ]
 
 [<Fact; Trait("Category", "Tokenize")>]
 let ``Parse Limits Math Block`` () =
@@ -201,36 +207,37 @@ let ``Parse Limits Math Block`` () =
         \{ \LMIN~\u32, \LMAX~\u32^? \} \\
     \end{array}"
     |> run parseTex
-    |> testWith [ TexCommand
-                      { Head = { Name = "begin"; OptParams = [] }
-                        Args = [ Arg "array"; Arg "llll" ] }
-                  TexCommand
-                      { Head = { Name = "production"; OptParams = [] }
-                        Args = [ Arg "limits" ] }
-                  TexCommand
-                      { Head = { Name = "limits"; OptParams = [] }
-                        Args = [] }
-                  TexWord "::="
-                  TexWord "\{"
-                  TexCommand
-                      { Head = { Name = "LMIN"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "u32"; OptParams = [] }
-                        Args = [] }
-                  TexWord ","
-                  TexCommand
-                      { Head = { Name = "LMAX"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "u32"; OptParams = [] }
-                        Args = [] }
-                  TexWord "^"
-                  TexWord "?"
-                  TexWord "\}"
-                  TexCommand
-                      { Head = { Name = "end"; OptParams = [] }
-                        Args = [ Arg "array" ] } ]
+    |> testWith
+        [ TexCommand
+              { Head = { Name = "begin"; OptParams = [] }
+                Args = [ Arg "array"; Arg "llll" ] }
+          TexCommand
+              { Head = { Name = "production"; OptParams = [] }
+                Args = [ Arg "limits" ] }
+          TexCommand
+              { Head = { Name = "limits"; OptParams = [] }
+                Args = [] }
+          TexWord "::="
+          TexWord "\{"
+          TexCommand
+              { Head = { Name = "LMIN"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "u32"; OptParams = [] }
+                Args = [] }
+          TexWord ","
+          TexCommand
+              { Head = { Name = "LMAX"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "u32"; OptParams = [] }
+                Args = [] }
+          TexWord "^"
+          TexWord "?"
+          TexWord "\}"
+          TexCommand
+              { Head = { Name = "end"; OptParams = [] }
+                Args = [ Arg "array" ] } ]
 
 [<Fact; Trait("Category", "Tokenize")>]
 let ``Parse Table Type Math Block`` () =
@@ -239,25 +246,26 @@ let ``Parse Table Type Math Block`` () =
         \limits~\reftype \\
     \end{array}"
     |> run parseTex
-    |> testWith [ TexCommand
-                      { Head = { Name = "begin"; OptParams = [] }
-                        Args = [ Arg "array"; Arg "llll" ] }
-                  TexCommand
-                      { Head = { Name = "production"; OptParams = [] }
-                        Args = [ Arg "table type" ] }
-                  TexCommand
-                      { Head = { Name = "tabletype"; OptParams = [] }
-                        Args = [] }
-                  TexWord "::="
-                  TexCommand
-                      { Head = { Name = "limits"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "reftype"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "end"; OptParams = [] }
-                        Args = [ Arg "array" ] } ]
+    |> testWith
+        [ TexCommand
+              { Head = { Name = "begin"; OptParams = [] }
+                Args = [ Arg "array"; Arg "llll" ] }
+          TexCommand
+              { Head = { Name = "production"; OptParams = [] }
+                Args = [ Arg "table type" ] }
+          TexCommand
+              { Head = { Name = "tabletype"; OptParams = [] }
+                Args = [] }
+          TexWord "::="
+          TexCommand
+              { Head = { Name = "limits"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "reftype"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "end"; OptParams = [] }
+                Args = [ Arg "array" ] } ]
 
 [<Fact; Trait("Category", "Tokenize")>]
 let ``Parse External Types Math Block`` () =
@@ -269,46 +277,47 @@ let ``Parse External Types Math Block`` () =
  \ETGLOBAL~\globaltype \\
 \end{array}"
     |> run parseTex
-    |> testWith [ TexCommand
-                      { Head = { Name = "begin"; OptParams = [] }
-                        Args = [ Arg "array"; Arg "llll" ] }
-                  TexCommand
-                      { Head = { Name = "production"; OptParams = [] }
-                        Args = [ Arg "external types" ] }
-                  TexCommand
-                      { Head = { Name = "externtype"; OptParams = [] }
-                        Args = [] }
-                  TexWord "::="
-                  TexCommand
-                      { Head = { Name = "ETFUNC"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "functype"; OptParams = [] }
-                        Args = [] }
-                  TexWord "|"
-                  TexCommand
-                      { Head = { Name = "ETTABLE"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "tabletype"; OptParams = [] }
-                        Args = [] }
-                  TexWord "|"
-                  TexCommand
-                      { Head = { Name = "ETMEM"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "memtype"; OptParams = [] }
-                        Args = [] }
-                  TexWord "|"
-                  TexCommand
-                      { Head = { Name = "ETGLOBAL"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "globaltype"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "end"; OptParams = [] }
-                        Args = [ Arg "array" ] } ]
+    |> testWith
+        [ TexCommand
+              { Head = { Name = "begin"; OptParams = [] }
+                Args = [ Arg "array"; Arg "llll" ] }
+          TexCommand
+              { Head = { Name = "production"; OptParams = [] }
+                Args = [ Arg "external types" ] }
+          TexCommand
+              { Head = { Name = "externtype"; OptParams = [] }
+                Args = [] }
+          TexWord "::="
+          TexCommand
+              { Head = { Name = "ETFUNC"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "functype"; OptParams = [] }
+                Args = [] }
+          TexWord "|"
+          TexCommand
+              { Head = { Name = "ETTABLE"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "tabletype"; OptParams = [] }
+                Args = [] }
+          TexWord "|"
+          TexCommand
+              { Head = { Name = "ETMEM"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "memtype"; OptParams = [] }
+                Args = [] }
+          TexWord "|"
+          TexCommand
+              { Head = { Name = "ETGLOBAL"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "globaltype"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "end"; OptParams = [] }
+                Args = [ Arg "array" ] } ]
 
 [<Fact; Trait("Category", "Tokenize")>]
 let ``Parse Global Type Math Block`` () =
@@ -320,36 +329,37 @@ let ``Parse Global Type Math Block`` () =
  \MVAR \\
 \end{array}"
     |> run parseTex
-    |> testWith [ TexCommand
-                      { Head = { Name = "begin"; OptParams = [] }
-                        Args = [ Arg "array"; Arg "llll" ] }
-                  TexCommand
-                      { Head = { Name = "production"; OptParams = [] }
-                        Args = [ Arg "global type" ] }
-                  TexCommand
-                      { Head = { Name = "globaltype"; OptParams = [] }
-                        Args = [] }
-                  TexWord "::="
-                  TexCommand
-                      { Head = { Name = "mut"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "valtype"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "production"; OptParams = [] }
-                        Args = [ Arg "mutability" ] }
-                  TexCommand
-                      { Head = { Name = "mut"; OptParams = [] }
-                        Args = [] }
-                  TexWord "::="
-                  TexCommand
-                      { Head = { Name = "MCONST"; OptParams = [] }
-                        Args = [] }
-                  TexWord "|"
-                  TexCommand
-                      { Head = { Name = "MVAR"; OptParams = [] }
-                        Args = [] }
-                  TexCommand
-                      { Head = { Name = "end"; OptParams = [] }
-                        Args = [ Arg "array" ] } ]
+    |> testWith
+        [ TexCommand
+              { Head = { Name = "begin"; OptParams = [] }
+                Args = [ Arg "array"; Arg "llll" ] }
+          TexCommand
+              { Head = { Name = "production"; OptParams = [] }
+                Args = [ Arg "global type" ] }
+          TexCommand
+              { Head = { Name = "globaltype"; OptParams = [] }
+                Args = [] }
+          TexWord "::="
+          TexCommand
+              { Head = { Name = "mut"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "valtype"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "production"; OptParams = [] }
+                Args = [ Arg "mutability" ] }
+          TexCommand
+              { Head = { Name = "mut"; OptParams = [] }
+                Args = [] }
+          TexWord "::="
+          TexCommand
+              { Head = { Name = "MCONST"; OptParams = [] }
+                Args = [] }
+          TexWord "|"
+          TexCommand
+              { Head = { Name = "MVAR"; OptParams = [] }
+                Args = [] }
+          TexCommand
+              { Head = { Name = "end"; OptParams = [] }
+                Args = [ Arg "array" ] } ]

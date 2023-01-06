@@ -1,11 +1,10 @@
 module WasmMeta.ParsingTests
 
-open System
+
 open Xunit
 open Xunit.Abstractions
 
 open WasmMeta.Tokenize
-open WasmMeta.Extract
 open FParsec
 
 let test (result: ParserResult<_, _>) =
@@ -30,9 +29,7 @@ type TokenizerTests(output: ITestOutputHelper) =
             [ TexCommand(("begin", []), [ Arg "array"; Arg "llll" ])
               TexCommand(("production", []), [ Arg "number type" ])
               TexCommand(("numtype", []), [])
-              TexWord ":"
-              TexWord ":"
-              TexWord "="
+              TexWord "::="
               TexCommand(("I32", []), [])
               TexWord "|"
               TexCommand(("I64", []), [])
@@ -40,5 +37,21 @@ type TokenizerTests(output: ITestOutputHelper) =
               TexCommand(("F32", []), [])
               TexWord "|"
               TexCommand(("F64", []), [])
+              TexCommand(("end", []), [ Arg "array" ]) ]
+        )
+
+    [<Fact>]
+    let ``Parse Vecter Type Math Block`` () =
+        @"   \begin{array}{llll}
+        \production{vector type} & \vectype &::=&
+            \V128 \\
+        \end{array}"
+        |> run parseTex
+        |> testWith (
+            [ TexCommand(("begin", []), [ Arg "array"; Arg "llll" ])
+              TexCommand(("production", []), [ Arg "vector type" ])
+              TexCommand(("vectype", []), [])
+              TexWord "::="
+              TexCommand(("V128", []), [])
               TexCommand(("end", []), [ Arg "array" ]) ]
         )

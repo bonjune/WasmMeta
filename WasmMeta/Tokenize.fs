@@ -13,7 +13,12 @@ and Argument =
     | Arg of string
     | Cmd of Command
 
-let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    member self.Name =
+        match self with
+        | Arg s -> s
+        | Cmd cmd -> fst (fst cmd)
+
+let private letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 let private openBracket = pchar '{'
 let private closeBracket = pchar '}'

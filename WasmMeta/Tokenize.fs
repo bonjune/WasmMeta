@@ -4,9 +4,23 @@ open FParsec
 
 // Parse Tex Commands
 // Reference: https://en.wikipedia.org/wiki/Help:Displaying_a_formula#LaTeX_basics
-type Command = CommandHead * Argument list
+type Command = {
+    Head: CommandHead
+    Args: Argument list
+}
+with
+    static member Create head = { Head = head; Args = [] }
+    static member Create (head, args) = { Head = head; Args = args }
 /// Command Name and Optional Parameters
-and CommandHead = string * string list
+
+and [<Struct>] CommandHead = {
+    Name: string
+    OptParams: string list
+}
+
+with
+    static member Create name = { Name = name; OptParams = [] }
+    static member Create (name, opts) = {Name = name; OptParams = opts }
 
 /// An argument can be a string or a command
 and Argument =
@@ -16,7 +30,7 @@ and Argument =
     member self.Name =
         match self with
         | Arg s -> s
-        | Cmd cmd -> fst (fst cmd)
+        | Cmd cmd -> cmd.Head.Name
 
 let private letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
@@ -51,7 +65,7 @@ let private ws = spaces .>> many texSpaces
 let private commandName = slash >>. many1Chars2 letter (letterWith "./-#")
 let private optionalParams = skipChar '[' >>. sepBy1 word comma .>> skipChar ']'
 
-let private commandHead = commandName .>>. (attempt optionalParams <|> preturn [])
+let private commandHead = commandName .>>. (attempt optionalParams <|> preturn []) |>> CommandHead.Create
 
 /// ```
 /// <command>  ::= <commandHead> <argument>*
@@ -83,7 +97,10 @@ strArgRef.Value <-
     attempt (between openBracket closeBracket strArg)
     <|> manyChars (letterWith "./-# ")
 
-commandRef.Value <- commandHead .>>. many argument .>> ws
+commandRef.Value <-
+    commandHead
+    .>>. many argument |>> Command.Create
+    .>> ws
 
 type SingleCommand = string
 

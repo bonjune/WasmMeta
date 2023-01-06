@@ -26,18 +26,34 @@ type TokenizerTests(output: ITestOutputHelper) =
         \end{array}"
         |> run parseTex
         |> testWith (
-            [ TexCommand(("begin", []), [ Arg "array"; Arg "llll" ])
-              TexCommand(("production", []), [ Arg "number type" ])
-              TexCommand(("numtype", []), [])
+            [ TexCommand
+                  { Head = { Name = "begin"; OptParams = [] }
+                    Args = [ Arg "array"; Arg "llll" ] }
+              TexCommand
+                  { Head = { Name = "production"; OptParams = [] }
+                    Args = [ Arg "number type" ] }
+              TexCommand
+                  { Head = { Name = "numtype"; OptParams = [] }
+                    Args = [] }
               TexWord "::="
-              TexCommand(("I32", []), [])
+              TexCommand
+                  { Head = { Name = "I32"; OptParams = [] }
+                    Args = [] }
               TexWord "|"
-              TexCommand(("I64", []), [])
+              TexCommand
+                  { Head = { Name = "I64"; OptParams = [] }
+                    Args = [] }
               TexWord "|"
-              TexCommand(("F32", []), [])
+              TexCommand
+                  { Head = { Name = "F32"; OptParams = [] }
+                    Args = [] }
               TexWord "|"
-              TexCommand(("F64", []), [])
-              TexCommand(("end", []), [ Arg "array" ]) ]
+              TexCommand
+                  { Head = { Name = "F64"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "end"; OptParams = [] }
+                    Args = [ Arg "array" ] } ]
         )
 
     [<Fact; Trait("Category", "Tokenize")>]
@@ -48,12 +64,22 @@ type TokenizerTests(output: ITestOutputHelper) =
         \end{array}"
         |> run parseTex
         |> testWith (
-            [ TexCommand(("begin", []), [ Arg "array"; Arg "llll" ])
-              TexCommand(("production", []), [ Arg "vector type" ])
-              TexCommand(("vectype", []), [])
+            [ TexCommand
+                  { Head = { Name = "begin"; OptParams = [] }
+                    Args = [ Arg "array"; Arg "llll" ] }
+              TexCommand
+                  { Head = { Name = "production"; OptParams = [] }
+                    Args = [ Arg "vector type" ] }
+              TexCommand
+                  { Head = { Name = "vectype"; OptParams = [] }
+                    Args = [] }
               TexWord "::="
-              TexCommand(("V128", []), [])
-              TexCommand(("end", []), [ Arg "array" ]) ]
+              TexCommand
+                  { Head = { Name = "V128"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "end"; OptParams = [] }
+                    Args = [ Arg "array" ] } ]
         )
 
     [<Fact; Trait("Category", "Tokenize")>]
@@ -64,14 +90,26 @@ type TokenizerTests(output: ITestOutputHelper) =
         \end{array}"
         |> run parseTex
         |> testWith (
-            [ TexCommand(("begin", []), [ Arg "array"; Arg "llll" ])
-              TexCommand(("production", []), [ Arg "reference type" ])
-              TexCommand(("reftype", []), [])
+            [ TexCommand
+                  { Head = { Name = "begin"; OptParams = [] }
+                    Args = [ Arg "array"; Arg "llll" ] }
+              TexCommand
+                  { Head = { Name = "production"; OptParams = [] }
+                    Args = [ Arg "reference type" ] }
+              TexCommand
+                  { Head = { Name = "reftype"; OptParams = [] }
+                    Args = [] }
               TexWord "::="
-              TexCommand(("FUNCREF", []), [])
+              TexCommand
+                  { Head = { Name = "FUNCREF"; OptParams = [] }
+                    Args = [] }
               TexWord "|"
-              TexCommand(("EXTERNREF", []), [])
-              TexCommand(("end", []), [ Arg "array" ]) ]
+              TexCommand
+                  { Head = { Name = "EXTERNREF"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "end"; OptParams = [] }
+                    Args = [ Arg "array" ] } ]
         )
 
     [<Fact; Trait("Category", "Tokenize")>]
@@ -82,16 +120,30 @@ type TokenizerTests(output: ITestOutputHelper) =
         \end{array}"
         |> run parseTex
         |> testWith (
-            [ TexCommand(("begin", []), [ Arg "array"; Arg "llll" ])
-              TexCommand(("production", []), [ Arg "value type" ])
-              TexCommand(("valtype", []), [])
+            [ TexCommand
+                  { Head = { Name = "begin"; OptParams = [] }
+                    Args = [ Arg "array"; Arg "llll" ] }
+              TexCommand
+                  { Head = { Name = "production"; OptParams = [] }
+                    Args = [ Arg "value type" ] }
+              TexCommand
+                  { Head = { Name = "valtype"; OptParams = [] }
+                    Args = [] }
               TexWord "::="
-              TexCommand(("numtype", []), [])
+              TexCommand
+                  { Head = { Name = "numtype"; OptParams = [] }
+                    Args = [] }
               TexWord "|"
-              TexCommand(("vectype", []), [])
+              TexCommand
+                  { Head = { Name = "vectype"; OptParams = [] }
+                    Args = [] }
               TexWord "|"
-              TexCommand(("reftype", []), [])
-              TexCommand(("end", []), [ Arg "array" ]) ]
+              TexCommand
+                  { Head = { Name = "reftype"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "end"; OptParams = [] }
+                    Args = [ Arg "array" ] } ]
         )
 
 
@@ -103,17 +155,29 @@ type TokenizerTests(output: ITestOutputHelper) =
         \end{array}"
         |> run parseTex
         |> testWith (
-            [ TexCommand(("begin", []), [ Arg "array"; Arg "llll" ])
-              TexCommand(("production", []), [ Arg "result type" ])
-              TexCommand(("resulttype", []), [])
+            [ TexCommand
+                  { Head = { Name = "begin"; OptParams = [] }
+                    Args = [ Arg "array"; Arg "llll" ] }
+              TexCommand
+                  { Head = { Name = "production"; OptParams = [] }
+                    Args = [ Arg "result type" ] }
+              TexCommand
+                  { Head = { Name = "resulttype"; OptParams = [] }
+                    Args = [] }
               TexWord "::="
               TexWord "["
-              TexCommand(("vec", []), [])
+              TexCommand
+                  { Head = { Name = "vec"; OptParams = [] }
+                    Args = [] }
               TexWord "("
-              TexCommand(("valtype", []), [])
+              TexCommand
+                  { Head = { Name = "valtype"; OptParams = [] }
+                    Args = [] }
               TexWord ")"
               TexWord "]"
-              TexCommand(("end", []), [ Arg "array" ]) ]
+              TexCommand
+                  { Head = { Name = "end"; OptParams = [] }
+                    Args = [ Arg "array" ] } ]
         )
 
     [<Fact; Trait("Category", "Tokenize")>]
@@ -124,14 +188,28 @@ type TokenizerTests(output: ITestOutputHelper) =
         \end{array}"
         |> run parseTex
         |> testWith (
-            [ TexCommand(("begin", []), [ Arg "array"; Arg "llll" ])
-              TexCommand(("production", []), [ Arg "function type" ])
-              TexCommand(("functype", []), [])
+            [ TexCommand
+                  { Head = { Name = "begin"; OptParams = [] }
+                    Args = [ Arg "array"; Arg "llll" ] }
+              TexCommand
+                  { Head = { Name = "production"; OptParams = [] }
+                    Args = [ Arg "function type" ] }
+              TexCommand
+                  { Head = { Name = "functype"; OptParams = [] }
+                    Args = [] }
               TexWord "::="
-              TexCommand(("resulttype", []), [])
-              TexCommand(("to", []), [])
-              TexCommand(("resulttype", []), [])
-              TexCommand(("end", []), [ Arg "array" ]) ]
+              TexCommand
+                  { Head = { Name = "resulttype"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "to"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "resulttype"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "end"; OptParams = [] }
+                    Args = [ Arg "array" ] } ]
         )
 
     [<Fact; Trait("Category", "Tokenize")>]
@@ -142,20 +220,36 @@ type TokenizerTests(output: ITestOutputHelper) =
         \end{array}"
         |> run parseTex
         |> testWith (
-            [ TexCommand(("begin", []), [ Arg "array"; Arg "llll" ])
-              TexCommand(("production", []), [ Arg "limits" ])
-              TexCommand(("limits", []), [])
+            [ TexCommand
+                  { Head = { Name = "begin"; OptParams = [] }
+                    Args = [ Arg "array"; Arg "llll" ] }
+              TexCommand
+                  { Head = { Name = "production"; OptParams = [] }
+                    Args = [ Arg "limits" ] }
+              TexCommand
+                  { Head = { Name = "limits"; OptParams = [] }
+                    Args = [] }
               TexWord "::="
-              TexWord @"\{"
-              TexCommand(("LMIN", []), [])
-              TexCommand(("u32", []), [])
+              TexWord "\{"
+              TexCommand
+                  { Head = { Name = "LMIN"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "u32"; OptParams = [] }
+                    Args = [] }
               TexWord ","
-              TexCommand(("LMAX", []), [])
-              TexCommand(("u32", []), [])
+              TexCommand
+                  { Head = { Name = "LMAX"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "u32"; OptParams = [] }
+                    Args = [] }
               TexWord "^"
               TexWord "?"
-              TexWord @"\}"
-              TexCommand(("end", []), [ Arg "array" ]) ]
+              TexWord "\}"
+              TexCommand
+                  { Head = { Name = "end"; OptParams = [] }
+                    Args = [ Arg "array" ] } ]
         )
 
     [<Fact; Trait("Category", "Tokenize")>]
@@ -166,13 +260,25 @@ type TokenizerTests(output: ITestOutputHelper) =
         \end{array}"
         |> run parseTex
         |> testWith (
-            [ TexCommand(("begin", []), [ Arg "array"; Arg "llll" ])
-              TexCommand(("production", []), [ Arg "table type" ])
-              TexCommand(("tabletype", []), [])
+            [ TexCommand
+                  { Head = { Name = "begin"; OptParams = [] }
+                    Args = [ Arg "array"; Arg "llll" ] }
+              TexCommand
+                  { Head = { Name = "production"; OptParams = [] }
+                    Args = [ Arg "table type" ] }
+              TexCommand
+                  { Head = { Name = "tabletype"; OptParams = [] }
+                    Args = [] }
               TexWord "::="
-              TexCommand(("limits", []), [])
-              TexCommand(("reftype", []), [])
-              TexCommand(("end", []), [ Arg "array" ]) ]
+              TexCommand
+                  { Head = { Name = "limits"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "reftype"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "end"; OptParams = [] }
+                    Args = [ Arg "array" ] } ]
         )
 
     [<Fact; Trait("Category", "Tokenize")>]
@@ -186,22 +292,48 @@ type TokenizerTests(output: ITestOutputHelper) =
    \end{array}"
         |> run parseTex
         |> testWith (
-            [ TexCommand(("begin", []), [ Arg "array"; Arg "llll" ])
-              TexCommand(("production", []), [ Arg "external types" ])
-              TexCommand(("externtype", []), [])
+            [ TexCommand
+                  { Head = { Name = "begin"; OptParams = [] }
+                    Args = [ Arg "array"; Arg "llll" ] }
+              TexCommand
+                  { Head = { Name = "production"; OptParams = [] }
+                    Args = [ Arg "external types" ] }
+              TexCommand
+                  { Head = { Name = "externtype"; OptParams = [] }
+                    Args = [] }
               TexWord "::="
-              TexCommand(("ETFUNC", []), [])
-              TexCommand(("functype", []), [])
+              TexCommand
+                  { Head = { Name = "ETFUNC"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "functype"; OptParams = [] }
+                    Args = [] }
               TexWord "|"
-              TexCommand(("ETTABLE", []), [])
-              TexCommand(("tabletype", []), [])
+              TexCommand
+                  { Head = { Name = "ETTABLE"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "tabletype"; OptParams = [] }
+                    Args = [] }
               TexWord "|"
-              TexCommand(("ETMEM", []), [])
-              TexCommand(("memtype", []), [])
+              TexCommand
+                  { Head = { Name = "ETMEM"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "memtype"; OptParams = [] }
+                    Args = [] }
               TexWord "|"
-              TexCommand(("ETGLOBAL", []), [])
-              TexCommand(("globaltype", []), [])
-              TexCommand(("end", []), [ Arg "array" ]) ]
+              TexCommand
+                  { Head = { Name = "ETGLOBAL"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "globaltype"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "end"; OptParams = [] }
+                    Args = [ Arg "array" ] } ]
+
+
         )
 
     [<Fact; Trait("Category", "Tokenize")>]
@@ -215,17 +347,37 @@ type TokenizerTests(output: ITestOutputHelper) =
    \end{array}"
         |> run parseTex
         |> testWith (
-            [ TexCommand(("begin", []), [ Arg "array"; Arg "llll" ])
-              TexCommand(("production", []), [ Arg "global type" ])
-              TexCommand(("globaltype", []), [])
+            [ TexCommand
+                  { Head = { Name = "begin"; OptParams = [] }
+                    Args = [ Arg "array"; Arg "llll" ] }
+              TexCommand
+                  { Head = { Name = "production"; OptParams = [] }
+                    Args = [ Arg "global type" ] }
+              TexCommand
+                  { Head = { Name = "globaltype"; OptParams = [] }
+                    Args = [] }
               TexWord "::="
-              TexCommand(("mut", []), [])
-              TexCommand(("valtype", []), [])
-              TexCommand(("production", []), [ Arg "mutability" ])
-              TexCommand(("mut", []), [])
+              TexCommand
+                  { Head = { Name = "mut"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "valtype"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "production"; OptParams = [] }
+                    Args = [ Arg "mutability" ] }
+              TexCommand
+                  { Head = { Name = "mut"; OptParams = [] }
+                    Args = [] }
               TexWord "::="
-              TexCommand(("MCONST", []), [])
+              TexCommand
+                  { Head = { Name = "MCONST"; OptParams = [] }
+                    Args = [] }
               TexWord "|"
-              TexCommand(("MVAR", []), [])
-              TexCommand(("end", []), [ Arg "array" ]) ]
+              TexCommand
+                  { Head = { Name = "MVAR"; OptParams = [] }
+                    Args = [] }
+              TexCommand
+                  { Head = { Name = "end"; OptParams = [] }
+                    Args = [ Arg "array" ] } ]
         )

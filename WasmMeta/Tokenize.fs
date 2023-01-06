@@ -42,9 +42,24 @@ let private optionalParams = skipChar '[' >>. sepBy1 word comma .>> skipChar ']'
 
 let private commandHead = commandName .>>. (attempt optionalParams <|> preturn [])
 
-// Referece: Creating a recursive parser in FParsec
-// - https://hestia.typepad.com/flatlander/2011/07/recursive-parsers-in-fparsec.html
-// - https://stackoverflow.com/questions/71328877/how-to-parse-recusrive-grammar-in-fparsec?noredirect=1&lq=1
+/// ```
+/// <command>  ::= <commandHead> <argument>*
+/// 
+/// <commandHead> ::= <commandName> <optionalParams>?
+/// 
+/// <commandName> ::= \<letter> <letter>*
+/// 
+/// <optionalParams> ::= [ <word> , ... , <word> ]
+/// 
+/// <argument\ ::= { <command> }
+///            |     <string>
+///
+/// <string>   ::=   <letter>*
+///            |   { <string> }
+/// ```
+/// Referece: Creating a recursive parser in FParsec
+/// - https://hestia.typepad.com/flatlander/2011/07/recursive-parsers-in-fparsec.html
+/// - https://stackoverflow.com/questions/71328877/how-to-parse-recusrive-grammar-in-fparsec?noredirect=1&lq=1
 let command, private commandRef = createParserForwardedToRef ()
 
 let strArg, private strArgRef = createParserForwardedToRef ()
@@ -76,6 +91,10 @@ type TexToken =
     | TexCommand of Command
     | TexWord of string
 
+/// ```
+/// <token> ::= <command>
+///         |   <word>
+/// ```
 let token =
     choice [
         attempt command |>> TexCommand
@@ -83,5 +102,6 @@ let token =
         nonLetter |>> (string >> TexWord)
     ]
     .>> ws
+
 
 let parseTex = many token

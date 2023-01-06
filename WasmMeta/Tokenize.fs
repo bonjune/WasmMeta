@@ -31,6 +31,8 @@ let private texSpaces =
         skipString @"\:"
         skipString @"\;"
         skipString @"\!"
+        skipString @"\\"
+        skipChar   '&'
         skipChar   '~'
     ]
     .>> spaces
@@ -104,4 +106,4 @@ let token =
     .>> ws
 
 
-let parseTex = many token
+let parseTex = ws >>. many token

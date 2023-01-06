@@ -2,22 +2,22 @@
 
 ## Collecting Specification Files
 
-Run the script below.
-The script runs `wget` to recursively download all WebAssembly Specification HTML files from https://webassembly.github.io/spec/core/.
-Please check that you have installed `wget` in your system.
+This project references the [WebAssembly Spec Github Repository](https://github.com/WebAssembly/spec/tree/main/document/core) using `git submodule`.
+Check [.gitmodules](.gitmodules) for the submodule settings.
+
+Initialize and update the submodule via
 
 ``` bash
-# Make sure that you have set the file executable
-chmod +x ./script/load.sh
-
-./script/load.sh
+git submodule init
+git submodule update
 ```
 
-## Testing `Extract`
+, or, you can clone this repository via
 
-`Extract` Module is responsible for extracting from specification HTML files.
-The command below will run tests defined at [WasmMeta.Test](WasmMeta.Test).
+```bash
+git clone --recurse-submodules git@github.com:bonjune/WasmMeta.git
+```
 
-```
-dotnet test
-```
+Please change the uri to this repository for your environment setup if needed.
+
+Once submodule initialization completes, you are done collecting specification files.

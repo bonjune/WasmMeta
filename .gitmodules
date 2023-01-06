@@ -1,0 +1,3 @@
+[submodule "resources/spec"]
+	path = resources/spec
+	url = git@github.com:WebAssembly/spec.git

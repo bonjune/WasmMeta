@@ -5,7 +5,7 @@
     <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ParsingTests.fs" />
+    <Compile Include="TokenizeTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

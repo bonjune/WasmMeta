@@ -1,4 +1,4 @@
-module WasmMeta.ParsingTests
+module WasmMeta.TokenizeTests
 
 
 open Xunit

@@ -32,6 +32,10 @@ and Argument =
         | Arg s -> s
         | Cmd cmd -> cmd.Head.Name
 
+type TexToken =
+    | TexCommand of Command
+    | TexWord of string
+
 let private letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 let private openBracket = pchar '{'
@@ -42,6 +46,7 @@ let private equal = pstring @"::="
 let private openBracketLiteral = pstring @"\{"
 let private closeBracketLiteral = pstring @"\}"
 let private letter = anyOf letters
+let private nonLetter = satisfy (isNoneOf letters)
 let private letterWith cs = anyOf (letters + cs)
 let private word = many1Chars letter
 
@@ -102,14 +107,8 @@ commandRef.Value <-
     .>>. many argument |>> Command.Create
     .>> ws
 
-type SingleCommand = string
 
-// TODO: Define non-letter character parser
-let private nonLetter = anyChar
 
-type TexToken =
-    | TexCommand of Command
-    | TexWord of string
 
 /// ```
 /// <token> ::= <command>

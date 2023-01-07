@@ -218,7 +218,7 @@ let ``Parse Limits Math Block`` () =
               { Head = { Name = "limits"; OptParams = [] }
                 Args = [] }
           TexWord "::="
-          TexWord "\{"
+          TexWord @"\{"
           TexCommand
               { Head = { Name = "LMIN"; OptParams = [] }
                 Args = [] }
@@ -234,7 +234,7 @@ let ``Parse Limits Math Block`` () =
                 Args = [] }
           TexWord "^"
           TexWord "?"
-          TexWord "\}"
+          TexWord @"\}"
           TexCommand
               { Head = { Name = "end"; OptParams = [] }
                 Args = [ Arg "array" ] } ]

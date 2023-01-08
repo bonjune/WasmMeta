@@ -124,5 +124,6 @@ let private token =
           nonLetter |>> (string >> TexWord) ]
     .>> ws
 
+type Tokenizer = Parser<TexToken list, unit>
 
-let parseTex = ws >>. many token
+let parseTex: Tokenizer = ws >>. many token

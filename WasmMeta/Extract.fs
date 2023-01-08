@@ -1,202 +1,232 @@
 module WasmMeta.Extract
 
-open FSharp.Data
-open FParsec
+open System
 
-let extractValueSections () =
-    let document =
-        HtmlDocument.Load(__SOURCE_DIRECTORY__ + "/../resources/webassembly.github.io/spec/core/syntax/values.html")
-    document.CssSelect("section[id='values'] > section")
+open WasmMeta.Tokenize
 
-let extractTypeSections () =
-    let document =
-        HtmlDocument.Load(__SOURCE_DIRECTORY__ + "/../resources/webassembly.github.io/spec/core/syntax/types.html")
-    document.CssSelect("section[id$='-types']")
+let (|Begin|_|) =
+    function
+    | head :: tail ->
+        match head with
+        | TexCommand tc -> if tc.Head.Name = "begin" then Some tail else None
+        | _ -> None
+    | _ -> None
 
-let extractFormula (section:HtmlNode) =
-    let mathDiv = section.CssSelect("div[class~='math']")
-    if mathDiv.Length = 1
-    then mathDiv.Head.InnerText()
-    else failwith "<div class=\"math ...\"> must appear once in a section"
+let (|End|_|) =
+    function
+    | head :: tail ->
+        match head with
+        | TexCommand tc -> if tc.Head.Name = "end" then Some tail else None
+        | _ -> None
+    | _ -> None
+
+let (|Production|_|) =
+    function
+    | head :: tail ->
+        match head with
+        | TexCommand prod ->
+            if prod.Head.Name = "production" then
+                Some(tail, prod.Args.Head.Name)
+            else
+                None
+        | _ -> None
+    | _ -> None
+
+let (|Equal|_|) =
+    function
+    | head :: tail when head = TexWord "::=" -> Some tail
+    | _ -> None
+
+let (|Term|_|) =
+    function
+    | head :: tail ->
+        match head with
+        | TexCommand tc when tc.Head.Name |> String.forall (fun c -> Char.IsUpper(c) || Char.IsNumber(c)) ->
+            Some(tail, tc.Head.Name)
+        | _ -> None
+    | _ -> None
+
+let (|Nonterm|_|) =
+    function
+    | head :: tail ->
+        match head with
+        | TexCommand tc when tc.Head.Name |> String.forall (fun c -> Char.IsLower(c) || Char.IsNumber(c)) ->
+            Some(tail, tc.Head.Name)
+        | _ -> None
+    | _ -> None
+
+let (|Or|_|) =
+    function
+    | head :: tail when head = TexWord "|" -> Some tail
+    | _ -> None
+
+let (|MapsTo|_|) =
+    function
+    | head :: tail ->
+        match head with
+        | TexCommand { Head = { Name = name } } -> if name = "to" then Some tail else None
+        | _ -> None
+    | _ -> None
+
+let (|RecordStart|_|) =
+    function
+    | head :: tail when head = TexWord @"\{" -> Some tail
+    | _ -> None
+
+let (|RecordEnd|_|) =
+    function
+    | head :: tail when head = TexWord @"\}" -> Some tail
+    | _ -> None
+
+let (|OptSeq|_|) =
+    function
+    | h1 :: h2 :: tail ->
+        match h1, h2 with
+        | TexWord "^", TexWord "?" -> Some tail
+        | _ -> None
+    | _ -> None
+
+let (|ManyPossibleEmpty|_|) =
+    function
+    | h1 :: h2 :: tail ->
+        match h1, h2 with
+        | TexWord "^", TexWord "*" -> Some tail
+        | _ -> None
+    | _ -> None
+
+let (|ManyN|_|) =
+    function
+    | h1 :: h2 :: tail ->
+        match h1, h2 with
+        | TexWord "^", TexWord n -> Some(tail, n)
+        | _ -> None
+    | _ -> None
+
+let (|ManyNonEmpty|_|) =
+    function
+    | h1 :: h2 :: tail ->
+        match h1, h2 with
+        | TexWord "^", TexWord "+" -> Some tail
+        | _ -> None
+    | _ -> None
+
+type SequenceType =
+    | Optional
+    | PossibleEmpty
+    | NonEmpty
+    | N of string
+
 
 type Symbol =
-    | Term of string
-    | Nonterm of string
-    | Special of string
-    | Named of string * Symbol
-    | Optional of Symbol            // A^?
-    | ManyPossibleEmpty of Symbol   // A^*
-    | Many of Symbol                // A^n
-    | NonEmpty of Symbol            // A^+
-
-type Production =
-    | Union of Symbol list
-    | Tuple of Symbol list
-    | Vec of Symbol
-    | Record of Map<Symbol, Symbol>
-
-let inline toString (cs: char list) =
-    System.String.Concat(Array.ofList cs)
-
-let private skipTexSpaces = choice [
-    skipString @"\quad"
-    skipString @"\qquad"
-    skipString @"\ "
-    skipString @"\,"
-    skipString @"\:"
-    skipString @"\;"
-    skipString @"\!"
-]
-let private ws = spaces .>> many skipTexSpaces .>> spaces
-
-let private skipOpen = skipChar '{'
-let private skipClose = skipChar '}'
-let private skipOr = skipString @"~|~" .>> ws
-
-let private pBracket = skipOpen >>. many1Till anyChar skipClose |>> toString
-let private skipBracket = skipOpen >>. skipMany1Till skipAnyChar skipClose
-
-// Parsing Tex
-[<RequireQualifiedAccess>]
-module Tex =
-    let skipBegin = ws .>> skipString @"\[\begin{split}\begin{array}" .>> skipBracket .>> ws
-
-    let skipEnd = skipString @"\end{array}\end{split}" .>> (skipString @"\]" <|> ws) .>> ws
-
-    let skipDefine = skipString @"&::=&" .>> ws
-    let skipProdSep = skipString @"\\" .>> ws
-
-    /// Parse `\def\mathdef2599#1{{}}\mathdef2599{number type} & `
-    let pMathDef =
-        skipString @"\def\mathdef" .>> pint32 // 2599
-        .>> skipString @"#1{{}}\mathdef" .>> pint32 // 2599
-        >>. pBracket
-        .>> ws .>> skipChar '&' .>> ws
-
-    let private skipHref' = skipString @"\href" .>> skipBracket
-    let skipHref = attempt skipHref' <|> ws
+    | STerm of string
+    | SNonterm of string
+    | SSeq of Symbol * SequenceType
 
 
-[<RequireQualifiedAccess>]
-module Symbol =
-    let pNonterm =
-        skipString @"\mathit"
-        >>. pBracket
-        |>> Nonterm
+type ProductionRule =
+    { Name: string
+      Lhs: Symbol list
+      Rhs: Symbol list list }
 
-    let pNontermOf s =
-        skipString @"\mathit"
-        >>. between skipOpen skipClose (pstring s)
-        |>> Nonterm
+type Extractor(source: TexToken list) =
+    let rules = ResizeArray<ProductionRule>(1)
 
-    let pTerm =
-        skipString @"\mathsf"
-        >>. pBracket
-        |>> Term
+    let consume tokens =
+        let mutable prodName = None
+        let mutable onLhs = true
+        let lhs = ResizeArray()
+        let rhs = ResizeArray()
+        let rhsBag = ResizeArray()
+        let mutable inRecord = false
 
-    let pArrow = pstring @"\rightarrow" |>> Special
+        let consumeTail tokens =
+            match tokens with
+            | OptSeq tail -> (tail, Optional) |> Some
+            | ManyPossibleEmpty tail -> (tail, PossibleEmpty) |> Some
+            | ManyN(tail, n) -> (tail, N n) |> Some
+            | ManyNonEmpty tail -> (tail, NonEmpty) |> Some
+            | _ -> None
 
-    let private pSymbolFirst =
-        Tex.skipHref
-        >>. between skipOpen skipClose (choice [pNonterm; pTerm; pArrow])
 
-    let pSymbolNaive    =   pSymbolFirst .>> ws
+        let rec loop tokens =
+            match tokens with
+            | Begin tail -> loop tail
+            | End tail -> loop tail
+            | Production(tail, name) ->
+                match prodName with
+                | None ->
+                    prodName <- Some name
+                    onLhs <- true
+                    loop tail
+                | Some _ -> tokens
+            | Equal tail ->
+                if not onLhs then
+                    failwith "Equal cannot appear twice"
+                else
+                    onLhs <- false
+                    loop tail
+            | Term(tail, s) ->
+                if onLhs then
+                    lhs.Add(STerm s)
+                    loop tail
+                else
+                    match consumeTail tail with
+                    | Some(tail, kind) ->
+                        rhsBag.Add(SSeq(STerm s, kind))
+                        loop tail
+                    | None ->
+                        rhsBag.Add(STerm s)
+                        loop tail
+            | Nonterm(tail, s) ->
+                if onLhs then
+                    lhs.Add(STerm s)
+                    loop tail
+                else
+                    match consumeTail tail with
+                    | Some(tail, kind) ->
+                        rhsBag.Add(SSeq(SNonterm s, kind))
+                        loop tail
+                    | None ->
+                        rhsBag.Add(SNonterm s)
+                        loop tail
 
-    let pSymbolOptional =   pSymbolFirst .>> skipString @"^?" .>> ws |>> Optional
-    
-    let pSymbolMany     =   pSymbolFirst .>> skipString @"^n" .>> ws |>> Many
-    
-    let pSymbolManyPossibleEmpty =
-        pSymbolFirst .>> skipString @"^\ast" .>> ws |>> ManyPossibleEmpty
+            | Or tail ->
+                let oldBag = ResizeArray(rhsBag)
+                rhs.Add(oldBag)
+                rhsBag.Clear()
+                loop tail
 
-    let pSymbolNamed =
-        Tex.skipHref
-        >>. between skipOpen skipClose pTerm
-        .>> pchar '~'
-        .>>. choice [
-            attempt pSymbolOptional
-            attempt pSymbolMany
-            attempt pSymbolManyPossibleEmpty
-            pSymbolNaive
-        ]
-        |>> (fun (name, sym) ->
-            match name with
-            | Term t -> Named (t, sym)
-            | _ -> failwith "unreachable"
-        )
+            | MapsTo tail -> loop tail
+            | RecordStart tail ->
+                inRecord <- true
+                loop tail
+            | RecordEnd tail ->
+                inRecord <- false
+                loop tail
 
-    let pSymbol =
-        choice [
-            attempt pSymbolNamed
-            attempt pSymbolOptional
-            attempt pSymbolMany
-            attempt pSymbolManyPossibleEmpty
-            pSymbolNaive
-        ]
+            | [] -> []
+            | tks -> failwithf "Not addressed tokens %A" tks
 
-[<RequireQualifiedAccess>]
-module Production =
-    /// A tuple separated by ws
-    let private pTuplews = many1 Symbol.pSymbol
+        let tail = loop tokens
 
-    /// A tuple separated by '~', but with more than two occurrences of symbols
-    let private pTupleTilde =
-        Symbol.pSymbol
-        .>> pchar '~'
-        .>>. sepBy1 Symbol.pSymbol (pchar '~')
-        |>> (fun (head, tail) -> head :: tail)
+        if rhsBag.Count > 0 then
+            let oldBag = ResizeArray(rhsBag)
+            rhs.Add(oldBag)
+            rhsBag.Clear()
 
-    let pTuple =
-        choice [
-            attempt pTupleTilde
-            pTuplews
-        ]
-        |>> Tuple
+        let rule =
+            { Name = prodName.Value
+              Lhs = Seq.toList lhs
+              Rhs = Seq.toList (Seq.map (fun symbols -> Seq.toList symbols) rhs) }
 
-    /// `A_1` | ... | `A_n`
-    let pUnion = parse {
-        let! symbols = sepBy1 Symbol.pSymbol skipOr
-        if symbols.Length = 1
-        then return! fail "Require more than one tuple"
-        else return Union symbols
-    }
+        rules.Add(rule)
+        tail
 
-    let pVec =
-        Tex.skipHref
-        >>. between skipOpen skipClose (Symbol.pNontermOf "vec")
-        >>. between (skipChar '(') (skipChar ')') Symbol.pSymbolNaive
-        |>> Vec
+    member _.Run() =
+        let rec loop tokens =
+            match consume tokens with
+            | [] -> ()
+            | tail -> loop tail
 
-    let private pPair = Symbol.pSymbolNaive .>> pchar '~' .>>. Symbol.pSymbol
-    let private pPairs = sepBy1 pPair (skipChar ',' .>> ws)
-    /// {key _term_, key _term_}
-    let pRecord =
-        between (skipString @"\{" .>> ws) (skipString @"\}") pPairs
-        |>> (Map >> Record)
-
-// Parse formulae
-
-let pLhs = Tex.pMathDef >>. Symbol.pSymbolNaive
-
-/// Reference: https://www.quanttec.com/fparsec/users-guide/parsing-alternatives.html
-let pRhs =
-    choice [
-        attempt Production.pRecord
-        attempt Production.pUnion
-        attempt Production.pVec
-        Production.pTuple
-    ]
-    .>> ws
-
-type ProductionRule = Symbol * Production
-
-let pProd: Parser<ProductionRule, _> =
-    pLhs
-    .>> Tex.skipDefine
-    .>> (skipChar '[' <|> ws)
-    .>>. pRhs
-    .>> (skipChar ']' <|> ws)
-    .>> ws
-
-let pFormula: Parser<_, unit> =
-    between Tex.skipBegin Tex.skipEnd (sepEndBy1 pProd Tex.skipProdSep)
+        loop source
+        rules

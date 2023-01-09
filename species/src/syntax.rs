@@ -6,9 +6,9 @@ use nom::{
     IResult,
 };
 
-use crate::parser::{Command, Token, ws};
+use crate::parser::{Command, Token};
 
-fn run(input: &str) -> Vec<Production> {
+pub fn get_productions(input: &str) -> Vec<Production> {
     let (_input, b) = MathBlock::parser(input).expect("parsing failed");
     b
 }
@@ -19,28 +19,28 @@ struct MathBlock<'a> {
 }
 
 impl<'a> MathBlock<'a> {
-    fn parser(input: &str) -> IResult<&str, Vec<Production>> {
-        let (input, _) = ws(input)?;
+    pub fn parser(input: &str) -> IResult<&str, Vec<Production>> {
+        let (input, _) = Token::ws(input)?;
         // \begin{array}{...}
         let (input, _begin) = Command::parser(input)?;
         let (input, productions) = many1(Production::parser)(input)?;
         // \begin{end}{...}
         let (input, _end) = Command::parser(input)?;
-        let (input, _) = ws(input)?;
+        let (input, _) = Token::ws(input)?;
 
         Ok((input, productions))
     }
 }
 
 #[derive(Debug, PartialEq)]
-struct Production<'a> {
+pub struct Production<'a> {
     name: &'a str,
     lhs: Command<'a>,
     rhs: Union<'a>,
 }
 
 impl<'a> Production<'a> {
-    fn parser(input: &'a str) -> IResult<&str, Self> {
+    pub fn parser(input: &'a str) -> IResult<&str, Self> {
         // \\production{number type}
         let (input, prod) = Command::parser(input)?;
         // \numtype
@@ -169,7 +169,7 @@ mod tests {
         &::=&
         \I32 ~|~ \I64 ~|~ \F32 ~|~ \F64 \\
         \end{array}";
-        let prods = run(s);
+        let prods = get_productions(s);
         println!("{:#?}", prods);
     }
 
@@ -188,7 +188,7 @@ mod tests {
           \MIMPORTS~\vec(\import), \\&&&&
           \MEXPORTS~\vec(\export) \quad\} \\
         \end{array}";
-        let prods = run(s);
+        let prods = get_productions(s);
         println!("{:#?}", prods);
     }
 
@@ -205,7 +205,7 @@ mod tests {
         \production{local index} & \localidx &::=& \u32 \\
         \production{label index} & \labelidx &::=& \u32 \\
         \end{array}";
-        let prods = run(s);
+        let prods = get_productions(s);
         println!("{:#?}", prods);
     }
 

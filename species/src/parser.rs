@@ -13,70 +13,46 @@ const EXTENDED_LETTERS: &str =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./-# ";
 
 
+pub struct Token;
 
-#[derive(Debug, PartialEq)]
-pub enum Token<'a> {
-    TCommand(Command<'a>),
-    TWord(&'a str),
-}
-
-impl<'a> Token<'a> {
-    fn parser(input: &'a str) -> IResult<&str, Self> {
-        let (tail, token) = alt((
-            map(Command::parser, Self::TCommand),
-            map(tag("{"), Self::TWord),
-            map(tag("}"), Self::TWord),
-            Self::equal,
-            Self::sequence_kind,
-            Self::word,
-            Self::non_letter,
-        ))(input)?;
-        let (tail, _) = ws(tail)?;
-
-        Ok((tail, token))
+impl Token {
+    pub fn equal(input: &str) -> IResult<&str, ()> {
+        let (tail, _s) = tag("::=")(input)?;
+        let (tail, _) = Self::ws(tail)?;
+        Ok((tail, ()))
     }
-
-    pub fn equal(input: &'a str) -> IResult<&str, Self> {
-        let (tail, s) = tag("::=")(input)?;
-        let (tail, _) = ws(tail)?;
-        Ok((tail, Self::TWord(s)))
-    }
-
-    fn word(input: &'a str) -> IResult<&str, Self> {
+    
+    fn word(input: &str) -> IResult<&str, &str> {
         let (tail, s) = alphanumeric1(input)?;
-        let (tail, _) = ws(tail)?;
-        Ok((tail, Self::TWord(s)))
+        let (tail, _) = Self::ws(tail)?;
+        Ok((tail, s))
     }
 
-    fn non_letter(input: &'a str) -> IResult<&str, Self> {
+    fn non_letter(input: &str) -> IResult<&str, &str> {
         let (tail, s) = recognize(many1(none_of(LETTERS)))(input)?;
-        let (tail, _) = ws(tail)?;
-        Ok((tail, Self::TWord(s)))
+        let (tail, _) = Self::ws(tail)?;
+        Ok((tail, s))
     }
 
-    fn sequence_kind(input: &'a str) -> IResult<&str, Self> {
-        let mut parser = alt((tag("^?"), tag("^n"), tag("^+"), tag("^?")));
-        let (tail, k) = parser(input)?;
-        Ok((tail, Self::TWord(k)))
+    pub fn ws(input: &str) -> IResult<&str, ()> {
+        let tex_spaces = alt((
+            tag(r"\quad"),
+            tag(r"\qquad"),
+            tag(r"\ "),
+            tag(r"\,"),
+            tag(r"\:"),
+            tag(r"\;"),
+            tag(r"\!"),
+            tag(r"&"),
+            tag(r"~"),
+        ));
+    
+        let (tail, _) = delimited(multispace0, many0(tex_spaces), multispace0)(input)?;
+        Ok((tail, ()))
     }
 }
 
-pub fn ws(input: &str) -> IResult<&str, ()> {
-    let tex_spaces = alt((
-        tag(r"\quad"),
-        tag(r"\qquad"),
-        tag(r"\ "),
-        tag(r"\,"),
-        tag(r"\:"),
-        tag(r"\;"),
-        tag(r"\!"),
-        tag(r"&"),
-        tag(r"~"),
-    ));
 
-    let (tail, _) = delimited(multispace0, many0(tex_spaces), multispace0)(input)?;
-    Ok((tail, ()))
-}
 
 #[derive(Debug, PartialEq)]
 pub struct Command<'a> {
@@ -120,34 +96,21 @@ impl SeqKind {
     }
 }
 
-#[derive(Debug)]
-enum TexToken<'a> {
-    Command(Command<'a>),
-    Word(&'a str),
-}
 
 impl<'a> Command<'a> {
-    fn new(head: CommandHead<'a>, args: Vec<Argument<'a>>, upnote: Option<SeqKind>) -> Self {
-        Self { head, args, upnote }
-    }
-
     pub fn parser(input: &'a str) -> IResult<&str, Self> {
-        let (input, _) = ws(input)?;
+        let (input, _) = Token::ws(input)?;
         let (input, head) = CommandHead::parser(input)?;
         let (input, args) = many0(Argument::parser)(input)?;
         let (input, upnote) = SeqKind::parser(input)?;
-        let (input, _) = ws(input)?;
+        let (input, _) = Token::ws(input)?;
 
         Ok((input, Self { head, args, upnote }))
     }
 }
 
 impl<'a> CommandHead<'a> {
-    fn new(name: &'a str, params: Vec<&'a str>) -> Self {
-        Self { name, params }
-    }
-
-    fn parser(input: &'a str) -> IResult<&str, Self> {
+    pub fn parser(input: &'a str) -> IResult<&str, Self> {
         let mut name_parser = preceded(tag("\\"), alphanumeric1);
         let (input, name) = name_parser(input)?;
 
@@ -169,7 +132,7 @@ impl<'a> CommandHead<'a> {
 }
 
 impl<'a> Argument<'a> {
-    fn parser(input: &'a str) -> IResult<&str, Self> {
+    pub fn parser(input: &'a str) -> IResult<&str, Self> {
         let arg_parser = alt((
             map(Command::parser, |out| Self::Cmd(Box::new(out))),
             Self::str_parser,
@@ -204,6 +167,6 @@ mod tests {
 
     #[test]
     fn whitespaces() {
-        ws("").expect("ws should skip empty");
+        Token::ws("").expect("ws should skip empty");
     }
 }

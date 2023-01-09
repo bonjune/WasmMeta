@@ -21,3 +21,7 @@ git clone --recurse-submodules git@github.com:bonjune/WasmMeta.git
 Please change the uri to this repository for your environment setup if needed.
 
 Once submodule initialization completes, you are done collecting specification files.
+
+## Parsing Syntax Specification
+
+`species` is a Rust program to parse Wasm Core Specifications `rst` files of Wasm syntax.

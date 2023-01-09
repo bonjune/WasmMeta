@@ -1,141 +1,18 @@
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{char, multispace0, none_of, one_of},
     combinator::{map, opt, recognize},
-    error::{Error, ErrorKind},
     multi::{many0, many1, separated_list1},
     sequence::{delimited, preceded},
     IResult, Parser,
 };
+use nom::character::complete::{char, multispace0, none_of, one_of, alphanumeric1};
 
 const LETTERS: &str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 const EXTENDED_LETTERS: &str =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./-# ";
 
-fn run(input: &str) -> Vec<Production> {
-    let (_input, b) = MathBlock::parser(input).expect("parsing failed");
-    b
-}
 
-#[derive(Debug, PartialEq)]
-struct MathBlock<'a> {
-    blocks: Vec<Production<'a>>,
-}
-
-impl<'a> MathBlock<'a> {
-    fn parser(input: &str) -> IResult<&str, Vec<Production>> {
-        let (input, _) = ws(input)?;
-        // \begin{array}{...}
-        let (input, _begin) = Command::parser(input)?;
-        let (input, productions) = many1(Production::parser)(input)?;
-        // \begin{end}{...}
-        let (input, _end) = Command::parser(input)?;
-        let (input, _) = ws(input)?;
-
-        Ok((input, productions))
-    }
-}
-
-#[derive(Debug, PartialEq)]
-struct Production<'a> {
-    name: &'a str,
-    lhs: Command<'a>,
-    rhs: Union<'a>,
-}
-
-impl<'a> Production<'a> {
-    fn parser(input: &'a str) -> IResult<&str, Self> {
-        // \\production{number type}
-        let (input, prod) = Command::parser(input)?;
-        // \numtype
-        let (input, lhs) = Command::parser(input)?;
-        // ::=
-        let (input, _) = Token::equal(input)?;
-        // \I32 ~|~ \I64 ~|~ \F32 ~|~ \F64
-        let (input, rhs) = Union::parser(input)?;
-        // \\ to separate productions
-        let (input, _) = tag(r"\\")(input)?;
-
-        let result = Self {
-            name: prod.head.name,
-            lhs,
-            rhs,
-        };
-        Ok((input, result))
-    }
-}
-
-fn ws(input: &str) -> IResult<&str, ()> {
-    let tex_spaces = alt((
-        tag(r"\quad"),
-        tag(r"\qquad"),
-        tag(r"\ "),
-        tag(r"\,"),
-        tag(r"\:"),
-        tag(r"\;"),
-        tag(r"\!"),
-        tag(r"&"),
-        tag(r"~"),
-    ));
-
-    let (tail, _) = delimited(multispace0, many0(tex_spaces), multispace0)(input)?;
-    Ok((tail, ()))
-}
-
-#[derive(Debug, PartialEq)]
-struct Union<'a> {
-    cases: Vec<Tuple<'a>>,
-}
-
-impl<'a> Union<'a> {
-    fn parser(input: &'a str) -> IResult<&str, Self> {
-        let (input, cases) = separated_list1(Self::or, Tuple::parser)(input)?;
-        Ok((input, Self { cases }))
-    }
-
-    fn or(input: &str) -> IResult<&str, ()> {
-        let (input, _) = tag("|")(input)?;
-        Ok((input, ()))
-    }
-}
-
-#[derive(Debug, PartialEq)]
-struct Tuple<'a> {
-    elems: Vec<Command<'a>>,
-}
-
-impl<'a> Tuple<'a> {
-    fn parser(input: &'a str) -> IResult<&str, Self> {
-        let (input, elems) = many1(Command::parser)(input)?;
-        Ok((input, Self { elems }))
-    }
-}
-
-fn record_pair(input: &str) -> IResult<&str, (Command, Command)> {
-    let (input, first) = Command::parser(input)?;
-    let (input, _) = tag(",")(input)?;
-    let (input, second) = Command::parser(input)?;
-
-    Ok((input, (first, second)))
-}
-
-fn record(input: &str) -> IResult<&str, Vec<(Command, Command)>> {
-    let (input, pairs) = delimited(tag(r"\{"), many1(record_pair), tag(r"\}"))(input)?;
-    Ok((input, pairs))
-}
-
-fn vec(input: &str) -> IResult<&str, Command> {
-    let (input, _) = tag("[")(input)?;
-    let (input, vec) = Command::parser(input)?;
-    if vec.head.name != "vec" {
-        return Err(nom::Err::Error(Error::new(input, ErrorKind::Tag)));
-    }
-    let (input, cmd) = delimited(tag("("), Command::parser, tag(")"))(input)?;
-    let (input, _) = tag("]")(input)?;
-
-    Ok((input, cmd))
-}
 
 #[derive(Debug, PartialEq)]
 pub enum Token<'a> {
@@ -159,14 +36,14 @@ impl<'a> Token<'a> {
         Ok((tail, token))
     }
 
-    fn equal(input: &'a str) -> IResult<&str, Self> {
+    pub fn equal(input: &'a str) -> IResult<&str, Self> {
         let (tail, s) = tag("::=")(input)?;
         let (tail, _) = ws(tail)?;
         Ok((tail, Self::TWord(s)))
     }
 
     fn word(input: &'a str) -> IResult<&str, Self> {
-        let (tail, s) = recognize(many1(one_of(LETTERS)))(input)?;
+        let (tail, s) = alphanumeric1(input)?;
         let (tail, _) = ws(tail)?;
         Ok((tail, Self::TWord(s)))
     }
@@ -182,6 +59,23 @@ impl<'a> Token<'a> {
         let (tail, k) = parser(input)?;
         Ok((tail, Self::TWord(k)))
     }
+}
+
+pub fn ws(input: &str) -> IResult<&str, ()> {
+    let tex_spaces = alt((
+        tag(r"\quad"),
+        tag(r"\qquad"),
+        tag(r"\ "),
+        tag(r"\,"),
+        tag(r"\:"),
+        tag(r"\;"),
+        tag(r"\!"),
+        tag(r"&"),
+        tag(r"~"),
+    ));
+
+    let (tail, _) = delimited(multispace0, many0(tex_spaces), multispace0)(input)?;
+    Ok((tail, ()))
 }
 
 #[derive(Debug, PartialEq)]
@@ -237,7 +131,7 @@ impl<'a> Command<'a> {
         Self { head, args, upnote }
     }
 
-    fn parser(input: &'a str) -> IResult<&str, Self> {
+    pub fn parser(input: &'a str) -> IResult<&str, Self> {
         let (input, _) = ws(input)?;
         let (input, head) = CommandHead::parser(input)?;
         let (input, args) = many0(Argument::parser)(input)?;
@@ -254,12 +148,12 @@ impl<'a> CommandHead<'a> {
     }
 
     fn parser(input: &'a str) -> IResult<&str, Self> {
-        let mut name_parser = preceded(tag("\\"), recognize(many1(one_of(LETTERS))));
+        let mut name_parser = preceded(tag("\\"), alphanumeric1);
         let (input, name) = name_parser(input)?;
 
         let mut params_parser = opt(delimited(
             char('['),
-            separated_list1(char(','), recognize(many1(one_of(LETTERS)))),
+            separated_list1(char(','), alphanumeric1),
             char(']'),
         ));
         let (input, params) = params_parser(input)?;
@@ -295,97 +189,21 @@ impl<'a> Argument<'a> {
     fn str_parser(input: &'a str) -> IResult<&str, Self> {
         map(Self::str_parser_inner, Self::Str)(input)
     }
+
+    pub fn name(&self) -> &'a str {
+        match self {
+            Argument::Str(s) => s,
+            Argument::Cmd(cmd) => cmd.head.name,
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use Argument::*;
-    use Token::*;
-
-    // #[test]
-    // fn single_command() {
-    //     let s = r"\begin{array}{llll}";
-    //     let tokens = tokenize(s);
-    //     assert_eq!(
-    //         tokens,
-    //         vec![TCommand(Command {
-    //             head: CommandHead::new("begin", vec![]),
-    //             args: vec![Str("array"), Str("llll")],
-    //         },),]
-    //     )
-    // }
 
     #[test]
-    fn test_union() {
-        let s = r"\I32 ~|~ \I64 ~|~ \F32 ~|~ \F64 \\";
-        let tuples = Union::parser(s);
-        println!("{:#?}", tuples)
-    }
-
-    #[test]
-    fn test_ws() {
+    fn whitespaces() {
         ws("").expect("ws should skip empty");
     }
-
-    #[test]
-    fn number_type_block() {
-        let s = r"\begin{array}{llll}
-        \production{number type} &
-        \numtype
-        &::=&
-        \I32 ~|~ \I64 ~|~ \F32 ~|~ \F64 \\
-        \end{array}";
-        let prods = run(s);
-        println!("{:#?}", prods);
-    }
-
-    // fn number_type_block_() {
-    //     let s = r"   \begin{array}{llll}
-    //     \production{number type} & \numtype &::=&
-    //         \I32 ~|~ \I64 ~|~ \F32 ~|~ \F64 \\
-    //     \end{array}";
-    //     let tokens = tokenize(s);
-    //     assert_eq!(
-    //         tokens,
-    //         vec![
-    //             TCommand(Command {
-    //                 head: CommandHead::new("begin", vec![]),
-    //                 args: vec![Str("array"), Str("llll")],
-    //             }),
-    //             TCommand(Command {
-    //                 head: CommandHead::new("production", vec![]),
-    //                 args: vec![Str("number type")],
-    //             }),
-    //             TCommand(Command {
-    //                 head: CommandHead::new("numtype", vec![]),
-    //                 args: vec![],
-    //             }),
-    //             TWord("::="),
-    //             TCommand(Command {
-    //                 head: CommandHead::new("I32", vec![]),
-    //                 args: vec![],
-    //             }),
-    //             TWord("|"),
-    //             TCommand(Command {
-    //                 head: CommandHead::new("I64", vec![]),
-    //                 args: vec![],
-    //             }),
-    //             TWord("|"),
-    //             TCommand(Command {
-    //                 head: CommandHead::new("F32", vec![]),
-    //                 args: vec![],
-    //             }),
-    //             TWord("|"),
-    //             TCommand(Command {
-    //                 head: CommandHead::new("F64", vec![]),
-    //                 args: vec![],
-    //             }),
-    //             TCommand(Command {
-    //                 head: CommandHead::new("end", vec![]),
-    //                 args: vec![Str("array")],
-    //             }),
-    //         ]
-    //     )
-    // }
 }

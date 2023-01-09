@@ -163,19 +163,6 @@ impl<'a> SVec<'a> {
 mod tests {
     use super::*;
 
-    // #[test]
-    // fn single_command() {
-    //     let s = r"\begin{array}{llll}";
-    //     let tokens = tokenize(s);
-    //     assert_eq!(
-    //         tokens,
-    //         vec![TCommand(Command {
-    //             head: CommandHead::new("begin", vec![]),
-    //             args: vec![Str("array"), Str("llll")],
-    //         },),]
-    //     )
-    // }
-
     #[test]
     fn test_union() {
         let s = r"\I32 ~|~ \I64 ~|~ \F32 ~|~ \F64 \\";
@@ -225,7 +212,7 @@ mod tests {
     }
 
     #[test]
-    fn many_productions() {
+    fn indices_block() {
         let s = r"   \begin{array}{llll}
         \production{type index} & \typeidx &::=& \u32 \\
         \production{function index} & \funcidx &::=& \u32 \\
@@ -240,53 +227,4 @@ mod tests {
         let prods = get_productions(s);
         println!("{:#?}", prods);
     }
-
-    // fn number_type_block_() {
-    //     let s = r"   \begin{array}{llll}
-    //     \production{number type} & \numtype &::=&
-    //         \I32 ~|~ \I64 ~|~ \F32 ~|~ \F64 \\
-    //     \end{array}";
-    //     let tokens = tokenize(s);
-    //     assert_eq!(
-    //         tokens,
-    //         vec![
-    //             TCommand(Command {
-    //                 head: CommandHead::new("begin", vec![]),
-    //                 args: vec![Str("array"), Str("llll")],
-    //             }),
-    //             TCommand(Command {
-    //                 head: CommandHead::new("production", vec![]),
-    //                 args: vec![Str("number type")],
-    //             }),
-    //             TCommand(Command {
-    //                 head: CommandHead::new("numtype", vec![]),
-    //                 args: vec![],
-    //             }),
-    //             TWord("::="),
-    //             TCommand(Command {
-    //                 head: CommandHead::new("I32", vec![]),
-    //                 args: vec![],
-    //             }),
-    //             TWord("|"),
-    //             TCommand(Command {
-    //                 head: CommandHead::new("I64", vec![]),
-    //                 args: vec![],
-    //             }),
-    //             TWord("|"),
-    //             TCommand(Command {
-    //                 head: CommandHead::new("F32", vec![]),
-    //                 args: vec![],
-    //             }),
-    //             TWord("|"),
-    //             TCommand(Command {
-    //                 head: CommandHead::new("F64", vec![]),
-    //                 args: vec![],
-    //             }),
-    //             TCommand(Command {
-    //                 head: CommandHead::new("end", vec![]),
-    //                 args: vec![Str("array")],
-    //             }),
-    //         ]
-    //     )
-    // }
 }

@@ -118,17 +118,23 @@ impl<'a> Record<'a> {
     }
 }
 
+#[derive(Debug, PartialEq)]
+pub struct SVec<'a> {
+    pub over: Command<'a>
+}
 
-fn vec(input: &str) -> IResult<&str, Command> {
-    let (input, _) = tag("[")(input)?;
-    let (input, vec) = Command::parser(input)?;
-    if vec.head.name != "vec" {
-        return Err(nom::Err::Error(Error::new(input, ErrorKind::Tag)));
+impl<'a> SVec<'a> {
+    pub fn parser(input: &'a str) -> IResult<&str, Self> {
+        let (input, _) = tag("[")(input)?;
+        let (input, vec) = Command::parser(input)?;
+        if vec.head.name != "vec" {
+            return Err(nom::Err::Error(Error::new(input, ErrorKind::Tag)));
+        }
+        let (input, cmd) = delimited(tag("("), Command::parser, tag(")"))(input)?;
+        let (input, _) = tag("]")(input)?;
+    
+        Ok((input, Self { over: cmd }))
     }
-    let (input, cmd) = delimited(tag("("), Command::parser, tag(")"))(input)?;
-    let (input, _) = tag("]")(input)?;
-
-    Ok((input, cmd))
 }
 
 #[cfg(test)]

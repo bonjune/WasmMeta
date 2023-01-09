@@ -3,7 +3,7 @@ use nom::{
     error::{Error, ErrorKind},
     multi::{many1, separated_list1},
     sequence::delimited,
-    IResult,
+    IResult, combinator::opt,
 };
 
 use crate::parser::{Command, Token};
@@ -36,7 +36,7 @@ impl<'a> MathBlock<'a> {
 pub struct Production<'a> {
     name: &'a str,
     lhs: Command<'a>,
-    rhs: Union<'a>,
+    rhs: Rhs<'a>,
 }
 
 impl<'a> Production<'a> {
@@ -48,7 +48,7 @@ impl<'a> Production<'a> {
         // ::=
         let (input, _) = Token::equal(input)?;
         // \I32 ~|~ \I64 ~|~ \F32 ~|~ \F64
-        let (input, rhs) = Union::parser(input)?;
+        let (input, rhs) = Rhs::parser(input)?;
         // \\ to separate productions
         let (input, _) = tag(r"\\")(input)?;
 
@@ -58,6 +58,29 @@ impl<'a> Production<'a> {
             rhs,
         };
         Ok((input, result))
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Rhs<'a> {
+    Union(Union<'a>),
+    Record(Record<'a>),
+}
+
+impl<'a> Rhs<'a> {
+    pub fn parser(input: &'a str) -> IResult<&str, Self> {
+        let (input, union) = opt(Union::parser)(input)?;
+        if let Some(union) = union {
+            let (input, _) = Token::ws(input)?;
+            return Ok((input, Rhs::Union(union)));
+        }
+        let (input, record) = opt(Record::parser)(input)?;
+        if let Some(record) = record {
+            let (input, _) = Token::ws(input)?;
+            return Ok((input, Rhs::Record(record)));
+        }
+
+        return Err(nom::Err::Error(Error::new(input, ErrorKind::Alt)));
     }
 }
 
@@ -105,13 +128,12 @@ pub struct Record<'a> {
 
 impl<'a> Record<'a> {
     pub fn parser(input: &'a str) -> IResult<&str, Self> {
-        let (input, pairs) = delimited(tag(r"\{"), many1(Self::pair), tag(r"\}"))(input)?;
+        let (input, pairs) = delimited(tag(r"\{"), separated_list1(tag(","), Self::pair), tag(r"\}"))(input)?;
         Ok((input, Self { pairs }))
     }
 
     fn pair(input: &str) -> IResult<&str, (Command, Command)> {
         let (input, first) = Command::parser(input)?;
-        let (input, _) = tag(",")(input)?;
         let (input, second) = Command::parser(input)?;
     
         Ok((input, (first, second)))
@@ -168,6 +190,16 @@ mod tests {
         \numtype
         &::=&
         \I32 ~|~ \I64 ~|~ \F32 ~|~ \F64 \\
+        \end{array}";
+        let prods = get_productions(s);
+        println!("{:#?}", prods);
+    }
+
+    #[test]
+    fn limits_block() {
+        let s = r"   \begin{array}{llll}
+        \production{limits} & \limits &::=&
+          \{ \LMIN~\u32, \LMAX~\u32^? \} \\
         \end{array}";
         let prods = get_productions(s);
         println!("{:#?}", prods);

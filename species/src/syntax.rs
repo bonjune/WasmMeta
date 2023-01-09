@@ -98,18 +98,26 @@ impl<'a> Tuple<'a> {
     }
 }
 
-fn record_pair(input: &str) -> IResult<&str, (Command, Command)> {
-    let (input, first) = Command::parser(input)?;
-    let (input, _) = tag(",")(input)?;
-    let (input, second) = Command::parser(input)?;
-
-    Ok((input, (first, second)))
+#[derive(Debug, PartialEq)]
+pub struct Record<'a> {
+    pub pairs: Vec<(Command<'a>, Command<'a>)>,
 }
 
-fn record(input: &str) -> IResult<&str, Vec<(Command, Command)>> {
-    let (input, pairs) = delimited(tag(r"\{"), many1(record_pair), tag(r"\}"))(input)?;
-    Ok((input, pairs))
+impl<'a> Record<'a> {
+    pub fn parser(input: &'a str) -> IResult<&str, Self> {
+        let (input, pairs) = delimited(tag(r"\{"), many1(Self::pair), tag(r"\}"))(input)?;
+        Ok((input, Self { pairs }))
+    }
+
+    fn pair(input: &str) -> IResult<&str, (Command, Command)> {
+        let (input, first) = Command::parser(input)?;
+        let (input, _) = tag(",")(input)?;
+        let (input, second) = Command::parser(input)?;
+    
+        Ok((input, (first, second)))
+    }
 }
+
 
 fn vec(input: &str) -> IResult<&str, Command> {
     let (input, _) = tag("[")(input)?;

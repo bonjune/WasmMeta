@@ -284,6 +284,39 @@ impl<'a> Symbol<'a> {
 mod tests {
     use super::*;
 
+    macro_rules! test_block {
+        ($prod_name:ident, $s:expr, $prod_num:expr) => {
+            #[test]
+            fn $prod_name() {
+                let (input, mb) = MathBlock::parser($s).unwrap();
+                let prods = mb.productions;
+                assert_eq!(input, "");
+                assert_eq!(prods.len(), $prod_num);
+            }
+        };
+    }
+
+    test_block!(test_external_types, r"\begin{array}{llll}
+    \production{external types} & \externtype &::=&
+      \ETFUNC~\functype ~|~
+      \ETTABLE~\tabletype ~|~
+      \ETMEM~\memtype ~|~
+      \ETGLOBAL~\globaltype \\
+    \end{array}", 1);
+
+    test_block!(test_global_type, r"\begin{array}{llll}
+    \production{global type} & \globaltype &::=&
+      \mut~\valtype \\
+    \production{mutability} & \mut &::=&
+      \MCONST ~|~
+      \MVAR \\
+    \end{array}", 2);
+
+    test_block!(test_result_type, r"\begin{array}{llll}
+    \production{result type} & \resulttype &::=&
+      [\vec(\valtype)] \\
+    \end{array}", 1);
+
     #[test]
     fn test_union() {
         let s = r"\I32 ~|~ \I64 ~|~ \F32 ~|~ \F64 \\";

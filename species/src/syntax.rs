@@ -71,16 +71,16 @@ impl<'a> Production<'a> {
 
 #[derive(Debug, PartialEq)]
 pub enum Rhs<'a> {
-    Union(Union<'a>),
+    OneOf(OneOf<'a>),
     Record(Record<'a>),
 }
 
 impl<'a> Rhs<'a> {
     pub fn parser(input: &'a str) -> IResult<&str, Self> {
-        let (input, union) = opt(Union::parser)(input)?;
+        let (input, union) = opt(OneOf::parser)(input)?;
         if let Some(union) = union {
-            let (input, _) = Token::ws(input)?;
-            return Ok((input, Rhs::Union(union)));
+            let (input, _) = ws(input)?;
+            return Ok((input, Rhs::OneOf(union)));
         }
         let (input, record) = opt(Record::parser)(input)?;
         if let Some(record) = record {
@@ -93,18 +93,18 @@ impl<'a> Rhs<'a> {
 
     pub fn len(&self) -> usize {
         match self {
-            Rhs::Union(union) => union.cases.len(),
+            Rhs::OneOf(union) => union.cases.len(),
             Rhs::Record(record) => record.pairs.len(),
         }
     }
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Union<'a> {
+pub struct OneOf<'a> {
     pub cases: Vec<Tuple<'a>>,
 }
 
-impl<'a> Union<'a> {
+impl<'a> OneOf<'a> {
     pub fn parser(input: &'a str) -> IResult<&str, Self> {
         let (input, cases) = separated_list1(Self::or, Tuple::parser)(input)?;
         Ok((input, Self { cases }))
@@ -320,7 +320,7 @@ mod tests {
     #[test]
     fn test_union() {
         let s = r"\I32 ~|~ \I64 ~|~ \F32 ~|~ \F64 \\";
-        let (input, union) = Union::parser(s).unwrap();
+        let (input, union) = OneOf::parser(s).unwrap();
         assert_eq!(input, "");
         assert_eq!(union.cases.len(), 4);
     }
@@ -354,7 +354,7 @@ mod tests {
         assert_eq!(mb.productions.len(), 1);
         let prod = mb.productions.first().unwrap();
         match &prod.rhs {
-            Rhs::Union(union) => assert_eq!(union.cases.len(), 4),
+            Rhs::OneOf(union) => assert_eq!(union.cases.len(), 4),
             Rhs::Record(_) => unreachable!(),
         }
     }
@@ -370,7 +370,7 @@ mod tests {
         assert_eq!(mb.productions.len(), 1);
         let prod = mb.productions.first().unwrap();
         match &prod.rhs {
-            Rhs::Union(_) => unreachable!(),
+            Rhs::OneOf(_) => unreachable!(),
             Rhs::Record(rec) => assert_eq!(rec.pairs.len(), 2),
         }
     }

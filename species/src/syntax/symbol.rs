@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use nom::{
     branch::alt, bytes::complete::tag, character::complete::char, combinator::map,
     error::ErrorKind, multi::separated_list1, sequence::delimited, InputIter,
@@ -9,7 +11,7 @@ use crate::{
     PResult,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub enum Symbol {
     STerm(String),
     SNonterm(SNonterm),
@@ -28,12 +30,18 @@ pub struct SNonterm {
     seq_kind: Option<SeqKind>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub struct SRecord {
     pairs: Vec<(String, Symbol)>,
 }
 
-#[derive(Debug, PartialEq)]
+impl Debug for SRecord {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("SRecord").field(&self.pairs).finish()
+    }
+}
+
+#[derive(PartialEq)]
 pub struct SBracedVec {
     inner: SVec,
 }
@@ -200,6 +208,28 @@ impl SArrow {
         Ok((input, Self { from, to }))
     }
 }
+
+impl Debug for Symbol {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::STerm(arg0) => f.debug_tuple("STerm").field(arg0).finish(),
+            Self::SNonterm(arg0) => write!(f, "{:?}", arg0),
+            Self::SRecord(arg0) => write!(f, "{:?}", arg0),
+            Self::SBracedVec(arg0) => write!(f, "{:?}", arg0),
+            Self::SVec(arg0) => write!(f, "{:?}", arg0),
+            Self::SArrow(arg0) =>write!(f, "{:?}", arg0),
+        }
+    }
+}
+
+impl Debug for SBracedVec {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("SBracedVec")
+            .field(&self.inner.over)
+            .finish()
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

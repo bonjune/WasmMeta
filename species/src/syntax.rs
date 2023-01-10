@@ -32,12 +32,12 @@ pub struct Lhs {
     name: String,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub struct Rhs {
     elems: Vec<RhsElem>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 struct RhsElem {
     symbols: Vec<Symbol>,
     cond: Option<()>,
@@ -140,6 +140,21 @@ pub fn or(input: &str) -> PResult<()> {
     let (input, _) = tag("|")(input)?;
     let (input, _) = ws(input)?;
     Ok((input, ()))
+}
+
+impl Debug for Rhs {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:#?}", self.elems)
+    }
+}
+
+impl Debug for RhsElem {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("RhsElem")
+            .field(&self.symbols)
+            .field(&self.cond)
+            .finish()
+    }
 }
 
 #[cfg(test)]

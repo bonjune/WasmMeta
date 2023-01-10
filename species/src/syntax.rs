@@ -87,7 +87,7 @@ impl<'a> MathBlock<'a> {
         let (input, _end) = end(input)?;
         let (input, _) = ws(input)?;
 
-        Ok((input, MathBlock { productions }))
+        Ok((input, MathBlock { productions: dbg!(productions) }))
     }
 }
 

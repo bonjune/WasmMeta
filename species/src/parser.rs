@@ -12,29 +12,25 @@ use nom::{
 const EXTENDED_LETTERS: &str =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./-# ";
 
-pub struct Token;
+pub fn equal(input: &str) -> IResult<&str, ()> {
+    let (tail, _s) = tag("::=")(input)?;
+    let (tail, _) = ws(tail)?;
+    Ok((tail, ()))
+}
 
-impl Token {
-    pub fn equal(input: &str) -> IResult<&str, ()> {
-        let (tail, _s) = tag("::=")(input)?;
-        let (tail, _) = Self::ws(tail)?;
-        Ok((tail, ()))
-    }
+pub fn ws(input: &str) -> IResult<&str, ()> {
+    let tex_spaces = alt((
+        tag(r"\quad"),
+        tag(r"\qquad"),
+        tag(r"\\"),
+        tag(r"\ "),
+        tag(r"&"),
+        tag(r"~"),
+        multispace1,
+    ));
 
-    pub fn ws(input: &str) -> IResult<&str, ()> {
-        let tex_spaces = alt((
-            tag(r"\quad"),
-            tag(r"\qquad"),
-            tag(r"\\"),
-            tag(r"\ "),
-            tag(r"&"),
-            tag(r"~"),
-            multispace1,
-        ));
-
-        let (tail, _) = many0(tex_spaces)(input)?;
-        Ok((tail, ()))
-    }
+    let (tail, _) = many0(tex_spaces)(input)?;
+    Ok((tail, ()))
 }
 
 #[derive(Debug, PartialEq)]
@@ -84,7 +80,7 @@ impl<'a> Command<'a> {
         let (input, head) = CommandHead::parser(input)?;
         let (input, args) = many0(Argument::parser)(input)?;
         let (input, upnote) = SeqKind::parser(input)?;
-        let (input, _) = Token::ws(input)?;
+        let (input, _) = ws(input)?;
 
         Ok((input, Self { head, args, upnote }))
     }
@@ -148,13 +144,13 @@ mod tests {
 
     #[test]
     fn whitespaces() {
-        let (input, _) = Token::ws("").expect("ws should skip empty");
+        let (input, _) = ws("").expect("ws should skip empty");
         assert_eq!(input, "");
 
-        let (input, _) = Token::ws("  \n & &&").expect("ws should skip &");
+        let (input, _) = ws("  \n & &&").expect("ws should skip &");
         assert_eq!(input, "");
 
-        let (input, _) = Token::ws(r"  & \quad \qquad").expect("ws should skip quad");
+        let (input, _) = ws(r"  & \quad \qquad").expect("ws should skip quad");
         assert_eq!(input, "");
     }
 

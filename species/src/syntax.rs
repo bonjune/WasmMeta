@@ -10,7 +10,7 @@ use nom::{
 
 use crate::{
     nom_err,
-    parser::{Command, SeqKind, Token},
+    parser::{Command, SeqKind, ws, equal},
 };
 
 #[derive(Debug, PartialEq)]
@@ -20,11 +20,11 @@ pub struct MathBlock<'a> {
 
 impl<'a> MathBlock<'a> {
     pub fn parser(input: &'a str) -> IResult<&str, Self> {
-        let (input, _) = Token::ws(input)?;
+        let (input, _) = ws(input)?;
         let (input, _begin) = Symbol::begin(input)?;
         let (input, productions) = many1(Production::parser)(input)?;
         let (input, _end) = Symbol::end(input)?;
-        let (input, _) = Token::ws(input)?;
+        let (input, _) = ws(input)?;
 
         Ok((input, MathBlock { productions }))
     }
@@ -44,10 +44,10 @@ impl<'a> Production<'a> {
         // \numtype
         let (input, lhs) = Symbol::nonterm(input)?;
         // ::=
-        let (input, _) = Token::equal(input)?;
+        let (input, _) = equal(input)?;
         // \I32 ~|~ \I64 ~|~ \F32 ~|~ \F64
         let (input, rhs) = Rhs::parser(input)?;
-        let (input, _) = Token::ws(input)?;
+        let (input, _) = ws(input)?;
 
         let result = Self { name, lhs, rhs };
         Ok((input, result))
@@ -84,7 +84,7 @@ impl<'a> Rhs<'a> {
         }
         let (input, record) = opt(Record::parser)(input)?;
         if let Some(record) = record {
-            let (input, _) = Token::ws(input)?;
+            let (input, _) = ws(input)?;
             return Ok((input, Rhs::Record(record)));
         }
 
@@ -112,7 +112,7 @@ impl<'a> Union<'a> {
 
     fn or(input: &str) -> IResult<&str, ()> {
         let (input, _) = tag("|")(input)?;
-        let (input, _) = Token::ws(input)?;
+        let (input, _) = ws(input)?;
         Ok((input, ()))
     }
 }
@@ -154,10 +154,10 @@ impl<'a> Record<'a> {
     }
 
     fn pair(input: &str) -> IResult<&str, (Symbol, Symbol)> {
-        let (input, _) = Token::ws(input)?;
+        let (input, _) = ws(input)?;
         let (input, first) = Symbol::term(input)?;
         let (input, second) = alt((Symbol::vec, Symbol::nonterm))(input)?;
-        let (input, _) = Token::ws(input)?;
+        let (input, _) = ws(input)?;
 
         Ok((input, (first, second)))
     }

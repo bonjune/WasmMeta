@@ -64,7 +64,7 @@ impl<'a> Production<'a> {
         if cmd.head.name == "production" {
             Ok((input, cmd.args[0].name()))
         } else {
-            Err(nom::Err::Error(Error::new(input, ErrorKind::Tag)))
+            nom_err!(input, ErrorKind::Tag)
         }
     }
 }
@@ -88,7 +88,7 @@ impl<'a> Rhs<'a> {
             return Ok((input, Rhs::Record(record)));
         }
 
-        return Err(nom::Err::Error(Error::new(input, ErrorKind::Alt)));
+        return nom_err!(input, ErrorKind::Alt);
     }
 
     pub fn len(&self) -> usize {
@@ -173,7 +173,7 @@ impl<'a> SVec<'a> {
         let (input, _) = tag("[")(input)?;
         let (input, vec) = Command::parser(input)?;
         if vec.head.name != "vec" {
-            return Err(nom::Err::Error(Error::new(input, ErrorKind::Tag)));
+            return nom_err!(input, ErrorKind::Tag);
         }
         let (input, cmd) = delimited(tag("("), Command::parser, tag(")"))(input)?;
         let (input, _) = tag("]")(input)?;
@@ -272,7 +272,7 @@ impl<'a> Symbol<'a> {
     pub fn vec(input: &'a str) -> IResult<&str, Self> {
         let (input, vec) = Command::parser(input)?;
         if vec.head.name != "vec" {
-            return Err(nom::Err::Error(Error::new(input, ErrorKind::Tag)));
+            return nom_err!(input, ErrorKind::Tag);
         }
         let (input, nt) = delimited(tag("("), Self::nonterm, tag(")"))(input)?;
 

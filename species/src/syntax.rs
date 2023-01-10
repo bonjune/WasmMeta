@@ -94,19 +94,20 @@ impl<'a> MathBlock<'a> {
 impl Rhs {
     pub fn parser(input: &str) -> PResult<Self> {
         let (input, elems) = separated_list1(or, RhsElem::parser)(input)?;
-        Ok((input, Self {
-            elems,
-        }))
+        Ok((input, Self { elems }))
     }
 }
 
 impl RhsElem {
     pub fn parser(input: &str) -> PResult<Self> {
         let (input, symbols) = many1(Symbol::parser)(input)?;
-        Ok((input, Self {
-            symbols,
-            cond: None,
-        }))
+        Ok((
+            input,
+            Self {
+                symbols,
+                cond: None,
+            },
+        ))
     }
 }
 
@@ -151,19 +152,90 @@ mod tests {
     }
 
     test_block!(
-        test_external_types,
+        parse_number_type_block,
         r"\begin{array}{llll}
-    \production{external types} & \externtype &::=&
-      \ETFUNC~\functype ~|~
-      \ETTABLE~\tabletype ~|~
-      \ETMEM~\memtype ~|~
-      \ETGLOBAL~\globaltype \\
+        \production{number type} &
+        \numtype
+        &::=&
+        \I32 ~|~ \I64 ~|~ \F32 ~|~ \F64 \\
+        \end{array}",
+        1
+    );
+
+    test_block!(
+        parse_vector_type_block,
+        r"   \begin{array}{llll}
+    \production{vector type} & \vectype &::=&
+      \V128 \\
     \end{array}",
         1
     );
 
     test_block!(
-        test_global_type,
+        parse_reference_type_block,
+        r"   \begin{array}{llll}
+    \production{reference type} & \reftype &::=&
+      \FUNCREF ~|~ \EXTERNREF \\
+    \end{array}",
+        1
+    );
+
+    test_block!(
+        parse_value_type_block,
+        r"   \begin{array}{llll}
+    \production{value type} & \valtype &::=&
+      \numtype ~|~ \vectype ~|~ \reftype \\
+    \end{array}",
+        1
+    );
+
+    test_block!(
+        parse_result_type,
+        r"\begin{array}{llll}
+    \production{result type} & \resulttype &::=&
+      [\vec(\valtype)] \\
+    \end{array}",
+        1
+    );
+
+    test_block!(
+        parse_function_type_block,
+        r"   \begin{array}{llll}
+    \production{function type} & \functype &::=&
+      \resulttype \to \resulttype \\
+    \end{array}",
+        1
+    );
+
+    test_block!(
+        parse_limits_block,
+        r"\begin{array}{llll}
+        \production{limits} & \limits &::=&
+          \{ \LMIN~\u32, \LMAX~\u32^? \} \\
+        \end{array}",
+        1
+    );
+
+    test_block!(
+        parse_memory_type_block,
+        r"   \begin{array}{llll}
+    \production{memory type} & \memtype &::=&
+      \limits \\
+    \end{array}",
+        1
+    );
+
+    test_block!(
+        parse_table_type_block,
+        r"   \begin{array}{llll}
+    \production{table type} & \tabletype &::=&
+      \limits~\reftype \\
+    \end{array}",
+        1
+    );
+
+    test_block!(
+        parse_global_type,
         r"\begin{array}{llll}
     \production{global type} & \globaltype &::=&
       \mut~\valtype \\
@@ -175,10 +247,13 @@ mod tests {
     );
 
     test_block!(
-        test_result_type,
+        parse_external_types,
         r"\begin{array}{llll}
-    \production{result type} & \resulttype &::=&
-      [\vec(\valtype)] \\
+    \production{external types} & \externtype &::=&
+      \ETFUNC~\functype ~|~
+      \ETTABLE~\tabletype ~|~
+      \ETMEM~\memtype ~|~
+      \ETGLOBAL~\globaltype \\
     \end{array}",
         1
     );
@@ -191,25 +266,8 @@ mod tests {
         assert_eq!(rhs.elems.len(), 4);
     }
 
-    test_block!(parse_number_type_block,
-        r"\begin{array}{llll}
-        \production{number type} &
-        \numtype
-        &::=&
-        \I32 ~|~ \I64 ~|~ \F32 ~|~ \F64 \\
-        \end{array}",
-        1
-    );
-
-    test_block!(parse_limits_block,
-        r"\begin{array}{llll}
-        \production{limits} & \limits &::=&
-          \{ \LMIN~\u32, \LMAX~\u32^? \} \\
-        \end{array}",
-        1
-    );
-
-    test_block!(parse_module_block,
+    test_block!(
+        parse_module_block,
         r"   \begin{array}{lllll}
         \production{module} & \module &::=& \{ &
           \MTYPES~\vec(\functype), \\&&&&

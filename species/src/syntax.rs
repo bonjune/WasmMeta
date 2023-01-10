@@ -358,6 +358,9 @@ mod tests {
           \MEXPORTS~\vec(\export) \quad\} \\
         \end{array}";
         let (input, mb) = MathBlock::parser(s).unwrap();
+        let prods = mb.productions;
+        assert_eq!(prods.len(), 1);
+        assert_eq!(prods[0].rhs.len(), 10);
     }
 
     #[test]

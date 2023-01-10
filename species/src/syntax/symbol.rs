@@ -1,6 +1,6 @@
 use nom::{
-    branch::alt, bytes::complete::tag, combinator::map, error::ErrorKind, multi::separated_list1,
-    sequence::delimited, InputIter, character::complete::char,
+    branch::alt, bytes::complete::tag, character::complete::char, combinator::map,
+    error::ErrorKind, multi::separated_list1, sequence::delimited, InputIter,
 };
 
 use crate::{
@@ -35,7 +35,7 @@ pub struct SRecord {
 
 #[derive(Debug, PartialEq)]
 pub struct SBracedVec {
-    inner: SVec
+    inner: SVec,
 }
 
 #[derive(Debug, PartialEq)]
@@ -64,29 +64,62 @@ impl Symbol {
     }
 }
 
-impl STerm {
-    pub fn parser(input: &str) -> PResult<String> {
-        let (input, cmd) = Command::parser(input)?;
-        if cmd.head.name == "K" {
-            let name = cmd
+impl<'a> Command<'a> {
+    fn is_terminal(&self) -> Option<&'a str> {
+        if self.head.name == "K" {
+            let name = self
                 .args
                 .first()
                 .expect("command `K` must have a symbol name as an argument")
                 .name();
-            return Ok((input, name.to_string()));
+            return Some(name);
         }
 
-        if cmd.head.name.iter_elements().all(|c| {
+        if self.head.name.iter_elements().all(|c| {
             if c.is_ascii_alphabetic() {
                 c.is_ascii_uppercase()
             } else {
                 true
             }
         }) {
-            return Ok((input, cmd.head.name.to_string()));
+            return Some(self.head.name);
         }
 
-        return nom_err!(input, ErrorKind::Tag);
+        return None;
+    }
+
+    fn is_nonterminal(&self) -> Option<&'a str> {
+        if self.head.name == "X" {
+            let name = self
+                .args
+                .first()
+                .expect("command `X` must have a symbol name as an argument")
+                .name();
+            return Some(name);
+        }
+
+        if self.head.name.iter_elements().all(|c| {
+            if c.is_ascii_alphabetic() {
+                c.is_ascii_lowercase()
+            } else {
+                true
+            }
+        }) {
+            return Some(self.head.name);
+        }
+
+        return None;
+    }
+}
+
+impl STerm {
+    pub fn parser(input: &str) -> PResult<String> {
+        let (input, cmd) = Command::parser(input)?;
+        if let Some(name) = cmd.is_terminal() {
+            Ok((input, name.to_string()))
+        } else {
+            nom_err!(input, ErrorKind::Tag)
+        }
     }
 }
 
@@ -96,38 +129,17 @@ impl SNonterm {
         if cmd.head.name == "end" || cmd.head.name == "production" {
             return nom_err!(input, ErrorKind::Tag);
         }
-        if cmd.head.name == "X" {
-            let name = cmd
-                .args
-                .first()
-                .expect("command `X` must have a symbol name as an argument")
-                .name()
-                .to_string();
-            return Ok((
+        if let Some(name) = cmd.is_nonterminal() {
+            Ok((
                 tail,
                 Self {
-                    name,
+                    name: name.to_string(),
                     seq_kind: cmd.upnote,
                 },
-            ));
+            ))
+        } else {
+            nom_err!(input, ErrorKind::Tag)
         }
-
-        if cmd.head.name.iter_elements().all(|c| {
-            if c.is_ascii_alphabetic() {
-                c.is_ascii_lowercase()
-            } else {
-                true
-            }
-        }) {
-            return Ok((
-                tail,
-                Self {
-                    name: cmd.head.name.to_string(),
-                    seq_kind: cmd.upnote,
-                },
-            ));
-        }
-        return nom_err!(tail, ErrorKind::Tag);
     }
 }
 
@@ -185,13 +197,7 @@ impl SArrow {
         }
         let (input, to) = SNonterm::parser(input)?;
 
-        Ok((
-            input,
-            Self {
-                from,
-                to,
-            },
-        ))
+        Ok((input, Self { from, to }))
     }
 }
 

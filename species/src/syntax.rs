@@ -1,5 +1,7 @@
 pub mod symbol;
 
+use std::fmt::Debug;
+
 use nom::{
     bytes::complete::tag,
     error::ErrorKind,
@@ -87,7 +89,12 @@ impl<'a> MathBlock<'a> {
         let (input, _end) = end(input)?;
         let (input, _) = ws(input)?;
 
-        Ok((input, MathBlock { productions: dbg!(productions) }))
+        Ok((
+            input,
+            MathBlock {
+                productions: dbg!(productions),
+            },
+        ))
     }
 }
 

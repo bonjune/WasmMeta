@@ -217,19 +217,16 @@ impl Debug for Symbol {
             Self::SRecord(arg0) => write!(f, "{:?}", arg0),
             Self::SBracedVec(arg0) => write!(f, "{:?}", arg0),
             Self::SVec(arg0) => write!(f, "{:?}", arg0),
-            Self::SArrow(arg0) =>write!(f, "{:?}", arg0),
+            Self::SArrow(arg0) => write!(f, "{:?}", arg0),
         }
     }
 }
 
 impl Debug for SBracedVec {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("SBracedVec")
-            .field(&self.inner.over)
-            .finish()
+        f.debug_tuple("SBracedVec").field(&self.inner.over).finish()
     }
 }
-
 
 #[cfg(test)]
 mod tests {

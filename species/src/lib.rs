@@ -14,7 +14,7 @@ macro_rules! nom_err {
     };
 }
 
-fn read_math_blocks(path: &Path) -> Vec<String> {
+fn read_math_blocks(path: impl AsRef<Path>) -> Vec<String> {
     let content = fs::read_to_string(path).unwrap();
     let mut blocks: Vec<String> = vec![];
     let mut math_block: Vec<&str> = vec![];

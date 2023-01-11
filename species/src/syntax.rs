@@ -27,7 +27,7 @@ pub struct Production<'a> {
     rhs: Rhs,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub struct Lhs {
     names: Vec<String>,
 }
@@ -141,6 +141,12 @@ pub fn or(input: &str) -> PResult<()> {
     Ok((input, ()))
 }
 
+impl Debug for Lhs {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Lhs").field(&self.names).finish()
+    }
+}
+
 impl Debug for Rhs {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:#?}", self.elems)
@@ -158,7 +164,22 @@ impl Debug for RhsElem {
 
 #[cfg(test)]
 mod tests {
+    use std::env;
+
+    use crate::read_math_blocks;
+
     use super::*;
+
+    #[test]
+    fn test_all_math_blocks() {
+        let path = env::var("WASMMETA_PATH").expect("Environment Variable `WASMMETA_PATH` is not set");
+        let blocks = read_math_blocks(path + "/resources/spec/document/core/syntax/types.rst");
+        for block in blocks {
+            let (input, mb) = MathBlock::parser(&block).unwrap();
+            assert_eq!(input, "");
+            assert!(mb.productions.len() > 0);
+        }
+    }
 
     macro_rules! test_block {
         ($prod_name:ident, $s:expr, $prod_num:expr) => {

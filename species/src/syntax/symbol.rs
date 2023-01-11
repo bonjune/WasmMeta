@@ -214,7 +214,7 @@ impl Debug for Symbol {
         match self {
             Self::STerm(arg0) => f.debug_tuple("STerm").field(arg0).finish(),
             Self::SNonterm(arg0) => write!(f, "{:?}", arg0),
-            Self::SRecord(arg0) => write!(f, "{:?}", arg0),
+            Self::SRecord(arg0) => write!(f, "{:#?}", arg0),
             Self::SBracedVec(arg0) => write!(f, "{:?}", arg0),
             Self::SVec(arg0) => write!(f, "{:?}", arg0),
             Self::SArrow(arg0) => write!(f, "{:?}", arg0),

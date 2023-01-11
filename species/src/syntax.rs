@@ -15,6 +15,8 @@ use crate::{
     PResult,
 };
 
+use self::symbol::SNonterm;
+
 #[derive(Debug, PartialEq)]
 pub struct MathBlock<'a> {
     productions: Vec<Production<'a>>,
@@ -75,8 +77,8 @@ impl Lhs {
     fn parser(input: &str) -> PResult<Self> {
         // let (input, cmd) = Command::parser(input)?;
         let comma = preceded(tag(","), ws);
-        let (input, commands) = separated_list1(comma, Command::parser)(input)?;
-        let names = commands.iter().map(|cmd| cmd.head.name.to_string()).collect();
+        let (input, nts) = separated_list1(comma, SNonterm::parser)(input)?;
+        let names = nts.iter().map(|nt| nt.name.clone()).collect();
         let lhs = Self { names };
         Ok((input, lhs))
     }

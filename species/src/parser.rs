@@ -52,7 +52,7 @@ pub enum Argument<'a> {
     Cmd(Box<Command<'a>>),
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum SeqKind {
     OptSeq,
     ManyPossibleEmpty,

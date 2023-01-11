@@ -24,9 +24,9 @@ pub enum Symbol {
 #[derive(Debug, PartialEq)]
 struct STerm;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct SNonterm {
-    name: String,
+    pub name: String,
     seq_kind: Option<SeqKind>,
 }
 

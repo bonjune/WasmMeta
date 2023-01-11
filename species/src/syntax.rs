@@ -51,8 +51,8 @@ impl<'a> Production<'a> {
         let (input, rhs) = Rhs::parser(input)?;
         let (input, _) = ws(input)?;
 
-        let result = Self { name, lhs, rhs };
-        Ok((input, result))
+        let production = Self { name, lhs, rhs };
+        Ok((input, dbg!(production)))
     }
 
     /// Check if next is a production, but do not comsume
@@ -93,7 +93,7 @@ impl<'a> MathBlock<'a> {
         Ok((
             input,
             MathBlock {
-                productions: dbg!(productions),
+                productions: productions,
             },
         ))
     }
@@ -378,5 +378,18 @@ mod tests {
           \ELEMDROP~\elemidx \\
         \end{array}",
         1
+    );
+
+    test_block!(
+        parse_element_segment_block,
+        r"   \begin{array}{llll}
+        \production{element segment} & \elem &::=&
+          \{ \ETYPE~\reftype, \EINIT~\vec(\expr), \EMODE~\elemmode \} \\
+        \production{element segment mode} & \elemmode &::=&
+          \EPASSIVE \\&&|&
+          \EACTIVE~\{ \ETABLE~\tableidx, \EOFFSET~\expr \} \\&&|&
+          \EDECLARATIVE \\
+        \end{array}",
+        2
     );
 }

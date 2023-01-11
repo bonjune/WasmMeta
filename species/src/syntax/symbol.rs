@@ -158,6 +158,7 @@ impl SRecord {
             separated_list1(tag(","), Self::pair),
             tag(r"\}"),
         )(input)?;
+        let (input, _) = ws(input)?;
         Ok((input, Self { pairs }))
     }
 

@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use nom::{
     bytes::complete::tag,
     error::ErrorKind,
-    multi::{many1, separated_list1},
+    multi::{many1, many_till, separated_list1},
 };
 
 use crate::{
@@ -29,7 +29,7 @@ pub struct Production<'a> {
 
 #[derive(Debug, PartialEq)]
 pub struct Lhs {
-    name: String,
+    names: Vec<String>,
 }
 
 #[derive(PartialEq)]
@@ -47,7 +47,6 @@ impl<'a> Production<'a> {
     pub fn parser(input: &'a str) -> PResult<Self> {
         let (input, name) = Self::production_name(input)?;
         let (input, lhs) = Lhs::parser(input)?;
-        let (input, _) = equal(input)?;
         let (input, rhs) = Rhs::parser(input)?;
         let (input, _) = ws(input)?;
 
@@ -73,10 +72,10 @@ impl<'a> Production<'a> {
 
 impl Lhs {
     fn parser(input: &str) -> PResult<Self> {
-        let (input, cmd) = Command::parser(input)?;
-        let lhs = Self {
-            name: cmd.head.name.to_string(),
-        };
+        // let (input, cmd) = Command::parser(input)?;
+        let (input, (names, _)) = many_till(Command::parser, equal)(input)?;
+        let names = names.iter().map(|n| n.head.name.to_string()).collect();
+        let lhs = Self { names };
         Ok((input, lhs))
     }
 }

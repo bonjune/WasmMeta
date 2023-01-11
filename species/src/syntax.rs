@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use nom::{
     bytes::complete::tag,
     error::ErrorKind,
-    multi::{many1, many_till, separated_list1},
+    multi::{many1, separated_list1}, sequence::preceded,
 };
 
 use crate::{
@@ -47,6 +47,7 @@ impl<'a> Production<'a> {
     pub fn parser(input: &'a str) -> PResult<Self> {
         let (input, name) = Self::production_name(input)?;
         let (input, lhs) = Lhs::parser(input)?;
+        let (input, _) = equal(input)?;
         let (input, rhs) = Rhs::parser(input)?;
         let (input, _) = ws(input)?;
 
@@ -73,8 +74,9 @@ impl<'a> Production<'a> {
 impl Lhs {
     fn parser(input: &str) -> PResult<Self> {
         // let (input, cmd) = Command::parser(input)?;
-        let (input, (names, _)) = many_till(Command::parser, equal)(input)?;
-        let names = names.iter().map(|n| n.head.name.to_string()).collect();
+        let comma = preceded(tag(","), ws);
+        let (input, commands) = separated_list1(comma, Command::parser)(input)?;
+        let names = commands.iter().map(|cmd| cmd.head.name.to_string()).collect();
         let lhs = Self { names };
         Ok((input, lhs))
     }
@@ -170,15 +172,19 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    fn test_all_math_blocks() {
-        let path = env::var("WASMMETA_PATH").expect("Environment Variable `WASMMETA_PATH` is not set");
-        let blocks = read_math_blocks(path + "/resources/spec/document/core/syntax/types.rst");
-        for block in blocks {
-            let (input, mb) = MathBlock::parser(&block).unwrap();
-            assert_eq!(input, "");
-            assert!(mb.productions.len() > 0);
-        }
+    macro_rules! test_file {
+        ($test_name:ident, $file_name:expr) => {
+            #[test]
+            fn $test_name() {
+                let path = env::var("WASMMETA_PATH").expect("Environment Variable `WASMMETA_PATH` is not set");
+                let blocks = read_math_blocks(path + $file_name);
+                for block in blocks {
+                    let (input, mb) = MathBlock::parser(&block).unwrap();
+                    assert_eq!(input, "");
+                    assert!(mb.productions.len() > 0);
+                }
+            }
+        };
     }
 
     macro_rules! test_block {
@@ -192,6 +198,21 @@ mod tests {
             }
         };
     }
+
+    test_file!(
+        test_all_types_block,
+        "/resources/spec/document/core/syntax/types.rst"
+    );
+
+    test_file!(
+        test_all_modules_block,
+        "/resources/spec/document/core/syntax/modules.rst"
+    );
+
+    test_file!(
+        test_all_instructions_block,
+        "/resources/spec/document/core/syntax/instructions.rst"
+    );
 
     test_block!(
         parse_number_type_block,
